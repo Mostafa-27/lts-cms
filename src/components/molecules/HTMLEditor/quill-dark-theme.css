@@ -1,0 +1,90 @@
+/* Dark mode styles for ReactQuill editor */
+.dark .ql-toolbar.ql-snow {
+  border-color: rgb(55, 65, 81); /* dark:border-gray-700 */
+  background-color: rgb(31, 41, 55); /* dark:bg-gray-800 */
+}
+
+.dark .ql-container.ql-snow {
+  border-color: rgb(55, 65, 81); /* dark:border-gray-700 */
+}
+
+.dark .ql-picker-label,
+.dark .ql-picker-item {
+  color: rgb(209, 213, 219); /* dark:text-gray-300 */
+}
+
+.dark .ql-picker-options {
+  background-color: rgb(31, 41, 55); /* dark:bg-gray-800 */
+  border-color: rgb(55, 65, 81); /* dark:border-gray-700 */
+}
+
+.dark .ql-snow .ql-stroke {
+  stroke: rgb(209, 213, 219); /* dark:text-gray-300 */
+}
+
+.dark .ql-snow .ql-fill {
+  fill: rgb(209, 213, 219); /* dark:text-gray-300 */
+}
+
+.dark .ql-snow .ql-picker-options .ql-picker-item:hover {
+  background-color: rgb(55, 65, 81); /* dark:hover:bg-gray-700 */
+}
+
+.dark .ql-editor {
+  color: rgb(229, 231, 235); /* dark:text-gray-200 */
+}
+
+.dark .ql-snow.ql-toolbar button.ql-active,
+.dark .ql-snow .ql-toolbar button.ql-active,
+.dark .ql-snow.ql-toolbar button:hover,
+.dark .ql-snow .ql-toolbar button:hover {
+  color: rgb(229, 231, 235); /* dark:text-gray-200 */
+}
+
+.dark .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.dark .ql-snow .ql-toolbar button.ql-active .ql-stroke,
+.dark .ql-snow.ql-toolbar button:hover .ql-stroke,
+.dark .ql-snow .ql-toolbar button:hover .ql-stroke {
+  stroke: rgb(229, 231, 235); /* dark:text-gray-200 */
+}
+
+.dark .ql-snow.ql-toolbar button.ql-active .ql-fill,
+.dark .ql-snow .ql-toolbar button.ql-active .ql-fill,
+.dark .ql-snow.ql-toolbar button:hover .ql-fill,
+.dark .ql-snow .ql-toolbar button:hover .ql-fill {
+  fill: rgb(229, 231, 235); /* dark:text-gray-200 */
+}
+
+.dark .ql-snow .ql-tooltip {
+  background-color: rgb(31, 41, 55); /* dark:bg-gray-800 */
+  color: rgb(229, 231, 235); /* dark:text-gray-200 */
+  border-color: rgb(55, 65, 81); /* dark:border-gray-700 */
+}
+
+.dark .ql-snow .ql-tooltip input[type="text"] {
+  background-color: rgb(55, 65, 81); /* dark:bg-gray-700 */
+  color: rgb(229, 231, 235); /* dark:text-gray-200 */
+  border-color: rgb(75, 85, 99); /* dark:border-gray-600 */
+}
+
+/* Ensure better visibility of content in dark mode */
+.dark .ql-editor h1, 
+.dark .ql-editor h2,
+.dark .ql-editor h3 {
+  color: rgb(243, 244, 246); /* dark:text-gray-100 */
+}
+
+.dark .ql-editor ul, 
+.dark .ql-editor ol {
+  color: rgb(229, 231, 235); /* dark:text-gray-200 */
+}
+
+.dark .ql-editor blockquote {
+  border-left-color: rgb(75, 85, 99); /* dark:border-gray-600 */
+  color: rgb(156, 163, 175); /* dark:text-gray-400 */
+}
+
+/* Links in editor */
+.dark .ql-editor a {
+  color: rgb(96, 165, 250); /* dark:text-blue-400 */
+}
