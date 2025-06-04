@@ -325,9 +325,9 @@ const HomeTimelineSection: React.FC = () => {
                 </div>
 
                 <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
-                  <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white">
-                    Save Changes for {lang.name.toUpperCase()}
-                  </Button>
+                    <Button type="submit" className="w-full">
+                                        Save Changes for {lang.name.toUpperCase()}
+                                      </Button>
                 </div>
               </form>
             </TabsContent>

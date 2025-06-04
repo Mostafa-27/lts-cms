@@ -192,7 +192,9 @@ const HomeAboutusSection: React.FC = () => {
                         />
                       )}
                     />
-                    <Button type="submit">Save Changes for {lang.name.toUpperCase()}</Button>
+                                        <Button type="submit" className="w-full">
+                                                            Save Changes for {lang.name.toUpperCase()}
+                                                          </Button>
                   </form>
                 </TabsContent>
               ))}
