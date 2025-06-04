@@ -31,14 +31,13 @@ export function LoginPage() {
           <CardTitle className="text-center text-2xl dark:text-gray-100">Login</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">            <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
+              <Input id="email" type="email" placeholder="Enter your email" {...register("email")} />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
+              <Input id="password" type="password" placeholder="Enter your password" {...register("password")} />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Login"}
