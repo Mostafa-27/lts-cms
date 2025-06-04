@@ -50,10 +50,9 @@ const HomeTimelineSection: React.FC = () => {
 
   const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  // Initialize collapsed state for events
+  // Initialize collapsed state for events - first one open, rest collapsed
   useEffect(() => {
-    setIsCollapsedEvents(fields.map(() => false));
+    setIsCollapsedEvents(fields.map((_, index) => index !== 0));
   }, [fields.length]);
 
   const toggleEventCollapse = (index: number) => {
