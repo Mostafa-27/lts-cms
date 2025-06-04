@@ -16,6 +16,7 @@ export interface GalleryImage {
 
 export interface GalleryFolder {
   name: string;
+  hasImages?: boolean;
   images?: GalleryImage[];
 }
 

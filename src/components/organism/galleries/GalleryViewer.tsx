@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sheet';
 import { 
   Folder,
+  FolderOpen,
   Plus, 
   Upload, 
   ArrowLeft, 
@@ -324,7 +325,11 @@ const handleDeleteFolder = async (folderName: string) => {
                   className="border dark:border-gray-700 rounded-md p-3 hover:border-blue-500 dark:hover:border-blue-400 cursor-pointer flex flex-col items-center justify-center dark:bg-gray-800"
                   onClick={() => handleOpenFolder(folder.name)}
                 >
-                  <Folder className="h-16 w-16 text-blue-400 dark:text-blue-300" />
+                  {folder.hasImages ? (
+                    <FolderOpen className="h-16 w-16 text-blue-400 dark:text-blue-300" />
+                  ) : (
+                    <Folder className="h-16 w-16 text-blue-400 dark:text-blue-300" />
+                  )}
                   <p className="mt-2 text-sm font-medium truncate w-full text-center dark:text-gray-200">{folder.name}</p>
                 </div>
               ))
