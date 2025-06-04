@@ -11,6 +11,7 @@ import { Button } from '../../../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface ImageData {
   imageUrl: string;
@@ -47,6 +48,7 @@ const HomeCustomersSection: React.FC = () => {
   const [nextStatId, setNextStatId] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const { refreshPreview } = useSplitLayout();
 
   const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm<CustomersFormData>({
     defaultValues: {
@@ -157,7 +159,6 @@ const HomeCustomersSection: React.FC = () => {
       setSelectedLangId(lang.id);
     }
   };
-
   const onSubmit: SubmitHandler<CustomersFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
@@ -166,6 +167,7 @@ const HomeCustomersSection: React.FC = () => {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Customers content updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update customers content:', error);
       toast.error('Failed to update content.');

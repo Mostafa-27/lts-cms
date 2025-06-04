@@ -10,6 +10,7 @@ import { Button } from '../../../../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface AnalyticsStat {
   id?: number;
@@ -32,7 +33,8 @@ const SECTION_ID = 3; // Example ID for Analytics section
 const HomeAnalyticsSection: React.FC = () => {
   const [nextStatId, setNextStatId] = useState<number>(1);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-
+  const { refreshPreview } = useSplitLayout();
+  
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<AnalyticsFormData>({
     defaultValues: {
       title: '',
@@ -110,7 +112,7 @@ const HomeAnalyticsSection: React.FC = () => {
       }
     };
     loadContent();
-  }, [selectedLangId, reset]);const onSubmit: SubmitHandler<AnalyticsFormData> = async (data) => {
+  }, [selectedLangId, reset]);  const onSubmit: SubmitHandler<AnalyticsFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
       return;
@@ -118,6 +120,7 @@ const HomeAnalyticsSection: React.FC = () => {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Analytics section updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update analytics content:', error);
       toast.error('Failed to update Analytics section.');

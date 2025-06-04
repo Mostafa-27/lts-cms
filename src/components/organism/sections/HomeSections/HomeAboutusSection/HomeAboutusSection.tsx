@@ -9,6 +9,7 @@ import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface ImageData {
   imageUrl: string;
@@ -25,7 +26,8 @@ const SECTION_ID = 2; // Example ID for About Us section
 
 const HomeAboutusSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+  const { refreshPreview } = useSplitLayout();
+
   const { control, handleSubmit, reset, formState: { errors }   } = useForm<AboutUsFormData>({
     defaultValues: {
       title: '',
@@ -101,8 +103,7 @@ const HomeAboutusSection: React.FC = () => {
       }
     };
     loadContent();
-  }, [selectedLangId, reset]);
-  const onSubmit: SubmitHandler<AboutUsFormData> = async (data) => {
+  }, [selectedLangId, reset]);  const onSubmit: SubmitHandler<AboutUsFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
       return;
@@ -113,6 +114,7 @@ const HomeAboutusSection: React.FC = () => {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       console.log(`About Us section data updated for lang ${selectedLangId}:`, data);
       toast.success(`About Us section updated successfully!`);
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update about us content:', error);
       toast.error('Failed to update About Us section.');

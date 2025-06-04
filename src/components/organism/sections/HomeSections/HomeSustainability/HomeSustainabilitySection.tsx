@@ -9,6 +9,7 @@ import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
  
 
@@ -21,7 +22,8 @@ interface SustainabilityFormData {
 const SECTION_ID = 8; // Sustainability section ID
 
 const HomeSustainabilitySection: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);  const {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const { refreshPreview } = useSplitLayout();const {
     control,
     handleSubmit,
     reset,
@@ -92,11 +94,12 @@ console.log('Fetched content:', content);        if (content) {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Sustainability section content updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update sustainability content:', error);
       toast.error('Failed to update content.');
     }
-  };  return (
+  };return (
     <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
       <div className="p-4 border rounded-md shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700">
         {/* <CollapsibleTrigger asChild>

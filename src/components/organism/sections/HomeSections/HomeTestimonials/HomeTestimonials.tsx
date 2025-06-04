@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../ui/card";
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
 import { Textarea } from '../../../../ui/textarea';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface TestimonialItem {
   id?: number;
@@ -34,6 +35,7 @@ const SECTION_ID = 6; // Example ID for Testimonials section
 const HomeTestimonialsSection: React.FC = () => {
   const [nextItemId, setNextItemId] = useState<number>(1);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const { refreshPreview } = useSplitLayout();
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<TestimonialsFormData>({
     defaultValues: {
@@ -125,11 +127,12 @@ const HomeTestimonialsSection: React.FC = () => {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Testimonials section updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update testimonials content:', error);
       toast.error('Failed to update testimonials section.');
     }
-  };  return (
+  };return (
     <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
       <div className="p-4 border rounded-md shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700">
         <ConfirmDialog />

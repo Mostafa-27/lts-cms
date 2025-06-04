@@ -10,6 +10,7 @@ import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface ServiceItem {
   id?: number;
@@ -27,6 +28,7 @@ const SECTION_ID = 7; // Services section ID
 
 const HomeServicesSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { refreshPreview } = useSplitLayout();
   
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<ServicesFormData>({
     defaultValues: {
@@ -98,7 +100,6 @@ const HomeServicesSection: React.FC = () => {
       setSelectedLangId(lang.id);
     }
   };
-
   const onSubmit: SubmitHandler<ServicesFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
@@ -107,6 +108,7 @@ const HomeServicesSection: React.FC = () => {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Services section updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update services content:', error);
       toast.error('Failed to update Services section.');

@@ -7,6 +7,7 @@ import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface CTAFormData {
   title: string;
@@ -16,6 +17,7 @@ const SECTION_ID = 9; // CTA section ID
 
 const HomeCTASection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { refreshPreview } = useSplitLayout();
   
   const {
     control,
@@ -92,11 +94,12 @@ const HomeCTASection: React.FC = () => {
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('CTA section content updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update CTA content:', error);
       toast.error('Failed to update content.');
     }
-  };  return (
+  };return (
     <div className="p-4 border rounded-md shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700">
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         {/* <CollapsibleTrigger className="flex items-center justify-between w-full text-left">

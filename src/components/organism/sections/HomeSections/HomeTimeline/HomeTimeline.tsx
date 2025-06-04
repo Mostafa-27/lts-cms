@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../..
 import { ChevronDown, ChevronUp, Calendar,  Trophy } from "lucide-react";
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
 interface TimelineEvent {
   id?: number;
@@ -30,6 +31,7 @@ const SECTION_ID = 4; // Example ID for Timeline section
 const HomeTimelineSection: React.FC = () => {
   const [nextEventId, setNextEventId] = useState<number>(1);
   const [isCollapsedEvents, setIsCollapsedEvents] = useState<boolean[]>([]);
+  const { refreshPreview } = useSplitLayout();
 
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<TimelineFormData>({
     defaultValues: {
@@ -119,8 +121,7 @@ const HomeTimelineSection: React.FC = () => {
       }
     };
     loadContent();
-  }, [selectedLangId, reset]);
-  const onSubmit: SubmitHandler<TimelineFormData> = async (data) => {
+  }, [selectedLangId, reset]);  const onSubmit: SubmitHandler<TimelineFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
       return;
@@ -129,6 +130,7 @@ const HomeTimelineSection: React.FC = () => {
       await updateSectionContent(SECTION_ID, selectedLangId,  data );
       console.log(`Timeline section data updated for lang ${selectedLangId}:`, data);
       toast.success('Timeline section updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update timeline content:', error);
       toast.error('Failed to update Timeline section.');

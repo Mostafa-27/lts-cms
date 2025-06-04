@@ -8,6 +8,7 @@ import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
+import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
 
  
 
@@ -21,6 +22,7 @@ const SECTION_ID = 1;
 
 const HomeHeroSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { refreshPreview } = useSplitLayout();
   
   const {
     control,
@@ -87,18 +89,18 @@ console.log('Fetched content:', content);        if (content) {
   const handleTabChange = (value: string) => {
     const lang = languages.find(l => l.name === value);
     if (lang) setSelectedLangId(lang.id);
-  };
-  const onSubmit: SubmitHandler<HeroFormData> = async data => {
+  };  const onSubmit: SubmitHandler<HeroFormData> = async data => {
     if (selectedLangId === null) return;
 
     try {
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       toast.success('Hero section content updated successfully!');
+      refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update hero content:', error);
       toast.error('Failed to update content.');
     }
-  };  return (
+  };return (
     <div className="p-0 dark:bg-gray-900">
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         {/* <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
