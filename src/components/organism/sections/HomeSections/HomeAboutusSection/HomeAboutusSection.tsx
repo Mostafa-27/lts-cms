@@ -26,7 +26,7 @@ const SECTION_ID = 2; // Example ID for About Us section
 
 const HomeAboutusSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { refreshPreview } = useSplitLayout();
+  const { refreshPreview, exitFullscreen } = useSplitLayout();
 
   const { control, handleSubmit, reset, formState: { errors }   } = useForm<AboutUsFormData>({
     defaultValues: {
@@ -107,14 +107,14 @@ const HomeAboutusSection: React.FC = () => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
       return;
-    }
-    try {
+    }    try {
 
       console.log('Submitting About Us section data:', data);
       await updateSectionContent(SECTION_ID, selectedLangId, data);
       console.log(`About Us section data updated for lang ${selectedLangId}:`, data);
       toast.success(`About Us section updated successfully!`);
       refreshPreview(); // Refresh the preview after successful save
+      exitFullscreen(); // Exit fullscreen mode after successful save
     } catch (error) {
       console.error('Failed to update about us content:', error);
       toast.error('Failed to update About Us section.');

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from '../../../ui/accordion';
 import { Card } from '../../../ui/card';
+import { Button } from '../../../ui/button';
 import { SplitLayout } from '../../layouts/SplitLayout';
 import { HomeAboutusSection } from '../../sections/HomeSections/HomeAboutusSection';
 import HomeAnalyticsSection from '../../sections/HomeSections/HomeAnalytics/HomeAnalytics';
@@ -17,7 +18,7 @@ import { HomeSustainabilitySection } from '../../sections/HomeSections/HomeSusta
 import HomeTestimonialsSection from '../../sections/HomeSections/HomeTestimonials/HomeTestimonials';
 import HomeTimelineSection from '../../sections/HomeSections/HomeTimeline/HomeTimeline';
 
-import { BarChart3, Clock, Heart, Layout, Lightbulb, Settings, Target, Users } from 'lucide-react';
+import { BarChart3, Clock, Heart, Layout, Lightbulb, Settings, Target, Users, Maximize2, X } from 'lucide-react';
 
 // Define sections for better organization
 const sections = [
@@ -28,7 +29,7 @@ const sections = [
     anchor: 'hero',
     hasTabs: false,
     icon: Layout,
-    description: 'Main landing section with primary messaging'
+ 
   },
   { 
     id: '2', 
@@ -37,7 +38,7 @@ const sections = [
     anchor: 'about',
     hasTabs: false,
     icon: Users,
-    description: 'Company information and team details'
+ 
   },
   { 
     id: '3', 
@@ -46,7 +47,7 @@ const sections = [
     anchor: 'analytics',
     hasTabs: true,
     icon: BarChart3,
-    description: 'Statistics and performance metrics'
+ 
   },
   { 
     id: '4', 
@@ -55,7 +56,7 @@ const sections = [
     anchor: 'timeline',
     hasTabs: true,
     icon: Clock,
-    description: 'Company history and milestones'
+ 
   },
   { 
     id: '5', 
@@ -64,7 +65,7 @@ const sections = [
     anchor: 'customers',
     hasTabs: false,
     icon: Users,
-    description: 'Customer testimonials and case studies'
+ 
   },
   { 
     id: '6', 
@@ -73,7 +74,7 @@ const sections = [
     anchor: 'testimonials',
     hasTabs: false,
     icon: Heart,
-    description: 'Client feedback and reviews'
+ 
   },
   { 
     id: '7', 
@@ -82,7 +83,7 @@ const sections = [
     anchor: 'services',
     hasTabs: false,
     icon: Settings,
-    description: 'Service offerings and capabilities'
+ 
   },
   { 
     id: '8', 
@@ -91,7 +92,7 @@ const sections = [
     anchor: 'sustainability',
     hasTabs: false,
     icon: Lightbulb,
-    description: 'Environmental initiatives and goals'
+ 
   },
   { 
     id: '9', 
@@ -100,12 +101,51 @@ const sections = [
     anchor: 'cta',
     hasTabs: false,
     icon: Target,
-    description: 'Call-to-action and contact information'
+    
   },
 ];
 
 const HomePageContent: React.FC = () => {
-     return (    <div className="flex-grow bg-gray-50 dark:bg-gray-900 min-h-screen">
+  const [fullscreenSection, setFullscreenSection] = useState<{ section: any; SectionComponent: React.ComponentType } | null>(null);
+
+  const enterFullscreen = (section: any, SectionComponent: React.ComponentType) => {
+    setFullscreenSection({ section, SectionComponent });
+  };
+
+  const exitFullscreen = () => {
+    setFullscreenSection(null);
+  };
+
+  // If in fullscreen mode, render only the fullscreen section
+  if (fullscreenSection) {
+    const { section, SectionComponent } = fullscreenSection;
+    return (
+      <div className="fixed w-screen h-screen flex justify-center inset-0 z-10 p-5 bg-white dark:bg-gray-900">
+        <div className="absolute top-1 right-24 z-10">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={exitFullscreen}
+            className="rounded-full h-10 w-10 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+            title="Exit fullscreen"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <SplitLayout 
+          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+          focusSection={section.anchor}
+          exitFullscreen={exitFullscreen}
+          fullscreenSection={!!fullscreenSection}
+          
+        >
+          <SectionComponent />
+        </SplitLayout>
+      </div>
+    );
+  }
+     return (    
+     <div className="flex-grow bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto py-8 px-4">
         <Card className="p-6 mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
           <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100 border-b dark:border-gray-700 pb-4">Home Page Content Management</h1>
@@ -131,18 +171,43 @@ const HomePageContent: React.FC = () => {
           type="multiple"
           className="w-full"
           defaultValue={[sections[0].id]} // Only first section open by default
-        >
-          {sections.map((section) => {
+        >          {sections.map((section) => {
             const SectionComponent = section.component;
-            return (              <AccordionItem key={section.id} value={section.id} className="bg-white dark:bg-gray-800 rounded-lg mb-4 shadow-sm border border-gray-100 dark:border-gray-700">
+            const IconComponent = section.icon;
+            return (
+              <AccordionItem key={section.id} value={section.id} className="bg-white dark:bg-gray-800 rounded-lg mb-4 shadow-sm border border-gray-100 dark:border-gray-700">
                 <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg">
-                  <span className="text-lg font-medium dark:text-gray-200">{section.name}</span>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-3">
+                      <IconComponent className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      <div className="text-left">
+                        <span className="text-lg font-medium dark:text-gray-200">{section.name}</span>
+                         
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mr-4">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          enterFullscreen(section, SectionComponent);
+                        }}
+                        className="rounded-full h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+                        title="Open in fullscreen"
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
                       previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
                       focusSection={section.anchor}
+                      exitFullscreen={exitFullscreen}
+                      fullscreenSection={!!fullscreenSection}
                     >
                       <SectionComponent />
                     </SplitLayout>

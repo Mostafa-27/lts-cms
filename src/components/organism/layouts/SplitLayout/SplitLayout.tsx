@@ -13,15 +13,19 @@ interface SplitLayoutProps {
   children: React.ReactNode;
   previewUrl?: string;
   focusSection?: string;
+  fullscreenSection?: boolean;
+  exitFullscreen: () => void; // Optional exitFullscreen function
 }
 
 const SplitLayout: React.FC<SplitLayoutProps> = ({ 
   children, 
   previewUrl = 'https://gh-website-nu.vercel.app/',
-  focusSection
+  focusSection,
+  fullscreenSection,
+  exitFullscreen
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(fullscreenSection);
   const [isIframeCollapsed, setIsIframeCollapsed] = useState(false);
   const [iframeUrl, setIframeUrl] = useState(previewUrl);
   const [refreshKey, setRefreshKey] = useState(Date.now());
@@ -34,15 +38,28 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
   // Function to refresh the iframe
   const refreshPreview = () => {
     setRefreshKey(Date.now());
+    exitFullscreen2(); // Exit fullscreen when refreshing
   };
-  
-  const toggleFullscreen = () => {
+    const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
     setIsCollapsed(false); // Reset collapse state when toggling fullscreen
     setIsIframeCollapsed(false); // Reset iframe collapse when toggling fullscreen
+  };
+  
+  const exitFullscreen2 = () => {
+    console.log("Exiting fullscreen");
+    setIsFullscreen(false);
+    setIsCollapsed(false);
+    setIsIframeCollapsed(false);
+    exitFullscreen()
   };  return (
-    <SplitLayoutProvider refreshPreview={refreshPreview}>
-      <div className={`${isFullscreen ? 'h-screen fixed inset-0 z-50 bg-white dark:bg-gray-900' : 'h-[calc(100vh-120px)]'}`}>
+    <SplitLayoutProvider 
+      refreshPreview={refreshPreview}
+      isFullscreen={isFullscreen||false}
+      toggleFullscreen={toggleFullscreen}
+      exitFullscreen={exitFullscreen2}
+    >
+      <div className={`${isFullscreen ? 'h-screen fixed inset-0 z-5 bg-white dark:bg-gray-900' : 'h-[calc(100vh-120px)]'}`}>
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full"
@@ -55,8 +72,30 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
               transition: "all 0.3s"
             }}
             className="transition-all duration-300"
-          >
-            <div className="p-4 h-full overflow-auto dark:bg-gray-900">
+          >            <div className="p-4 h-full overflow-auto dark:bg-gray-900 relative">
+              {/* Fullscreen and Collapse Controls */}
+              {/* <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="rounded-full h-8 w-8 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                  title={isCollapsed ? "Show editor" : "Hide editor"}
+                >
+                  {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={toggleFullscreen}
+                  className="rounded-full h-8 w-8 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                >
+                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
+              </div> */}
+              
               {children}
             </div>
           </ResizablePanel>
@@ -106,7 +145,9 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
             transition: "all 0.3s" 
           }}
           className="transition-all duration-300"
-        >          <IFrameViewer 
+
+        >        
+          <IFrameViewer 
             url={iframeUrl} 
             title="Website Preview" 
             height="100%" 
