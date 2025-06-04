@@ -198,3 +198,113 @@
     transform: rotate(360deg);
   }
 }
+
+/* Fullscreen Modal Animations */
+@layer utilities {
+  .fullscreen-enter {
+    animation: fullscreen-enter 0.35s ease-out forwards;
+  }
+  
+  .fullscreen-exit {
+    animation: fullscreen-exit 0.2s ease-in forwards;
+  }
+  
+  .fullscreen-backdrop-enter {
+    animation: backdrop-enter 0.25s ease-out forwards;
+  }
+  
+  .fullscreen-backdrop-exit {
+    animation: backdrop-exit 0.2s ease-in forwards;
+  }
+  
+  .scale-98 {
+    transform: scale(0.98);
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+}
+
+@keyframes fullscreen-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(1.5rem) rotateX(8deg);
+    filter: blur(3px);
+  }
+  60% {
+    opacity: 0.9;
+    transform: scale(0.97) translateY(0.5rem) rotateX(3deg);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotateX(0deg);
+    filter: blur(0px);
+  }
+}
+
+@keyframes fullscreen-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotateX(0deg);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96) translateY(0.8rem) rotateX(-3deg);
+    filter: blur(1px);
+  }
+}
+
+@keyframes backdrop-enter {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes backdrop-exit {
+  0% {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+}
+
+/* Body scroll lock */
+body.fullscreen-active {
+  overflow: hidden !important;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+/* Smooth transitions for all fullscreen elements */
+.fullscreen-element {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-content {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* Enhanced focus styles for fullscreen mode */
+.fullscreen-focus:focus {
+  outline: 2px solid rgb(59, 130, 246);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}

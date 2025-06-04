@@ -27,12 +27,10 @@ export const useFullscreen = (): UseFullscreenReturn => {
     
     // Prevent body scroll when in fullscreen
     document.body.style.overflow = 'hidden';
-    document.body.classList.add('fullscreen-active');
-    
-    // Add subtle animation delay for better UX
+    document.body.classList.add('fullscreen-active');    // Add subtle animation delay for better UX
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 300);
+    }, 350); // Reduced for faster animation
 
     return () => clearTimeout(timer);
   }, [fullscreenSection, isLoading]);
@@ -45,12 +43,11 @@ export const useFullscreen = (): UseFullscreenReturn => {
     // Restore body scroll
     document.body.style.overflow = 'unset';
     document.body.classList.remove('fullscreen-active');
-    
-    // Delay the actual state change to allow exit animation
+      // Delay the actual state change to allow exit animation
     const timer = setTimeout(() => {
       setFullscreenSection(null);
       setIsExiting(false);
-    }, 250);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [fullscreenSection, isExiting]);
