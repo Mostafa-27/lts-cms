@@ -81,3 +81,120 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fullscreen Modal Animations */
+@layer components {
+  .fullscreen-modal-backdrop {
+    @apply fixed inset-0 bg-black/20 backdrop-blur-sm z-40;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .fullscreen-modal-backdrop.exiting {
+    animation: fadeOut 0.2s ease-in;
+  }
+
+  .fullscreen-modal-content {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4;
+    animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .fullscreen-modal-content.exiting {
+    animation: slideOutDown 0.2s cubic-bezier(0.7, 0, 0.84, 0);
+  }
+
+  .fullscreen-modal-panel {
+    @apply w-full h-full max-w-7xl bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden;
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .fullscreen-modal-panel.exiting {
+    animation: scaleOut 0.2s cubic-bezier(0.7, 0, 0.84, 0);
+  }
+
+  /* Prevent scrolling when fullscreen is active */
+  body.fullscreen-active {
+    @apply overflow-hidden;
+  }
+
+  /* Loading spinner animation */
+  .fullscreen-loading-spinner {
+    @apply animate-spin rounded-full border-b-2 border-blue-600;
+    animation: spin 1s linear infinite;
+  }
+
+  /* Focus ring for accessibility */
+  .fullscreen-focus-ring {
+    @apply focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

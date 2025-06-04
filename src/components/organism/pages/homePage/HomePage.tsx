@@ -8,6 +8,7 @@ import {
 import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { SplitLayout } from '../../layouts/SplitLayout';
+import { FullscreenModal } from '../../../molecules/FullscreenModal';
 import { HomeAboutusSection } from '../../sections/HomeSections/HomeAboutusSection';
 import HomeAnalyticsSection from '../../sections/HomeSections/HomeAnalytics/HomeAnalytics';
 import { HomeCTASection } from '../../sections/HomeSections/HomeCTAsection';
@@ -17,6 +18,7 @@ import { HomeServicesSection } from '../../sections/HomeSections/HomeServices';
 import { HomeSustainabilitySection } from '../../sections/HomeSections/HomeSustainability';
 import HomeTestimonialsSection from '../../sections/HomeSections/HomeTestimonials/HomeTestimonials';
 import HomeTimelineSection from '../../sections/HomeSections/HomeTimeline/HomeTimeline';
+import { useFullscreen } from '../../../../hooks/useFullscreen';
 
 import { BarChart3, Clock, Heart, Layout, Lightbulb, Settings, Target, Users, Maximize2, X } from 'lucide-react';
 
@@ -106,42 +108,34 @@ const sections = [
 ];
 
 const HomePageContent: React.FC = () => {
-  const [fullscreenSection, setFullscreenSection] = useState<{ section: any; SectionComponent: React.ComponentType } | null>(null);
-
-  const enterFullscreen = (section: any, SectionComponent: React.ComponentType) => {
-    setFullscreenSection({ section, SectionComponent });
-  };
-
-  const exitFullscreen = () => {
-    setFullscreenSection(null);
-  };
+  const { 
+    fullscreenSection, 
+    isExiting, 
+    isLoading, 
+    enterFullscreen, 
+    exitFullscreen 
+  } = useFullscreen();
 
   // If in fullscreen mode, render only the fullscreen section
   if (fullscreenSection) {
     const { section, SectionComponent } = fullscreenSection;
     return (
-      <div className="fixed w-screen h-screen flex justify-center inset-0 z-10 p-5 bg-white dark:bg-gray-900">
-        <div className="absolute top-1 right-24 z-10">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={exitFullscreen}
-            className="rounded-full h-10 w-10 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-            title="Exit fullscreen"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+      <FullscreenModal
+        isOpen={!!fullscreenSection}
+        isExiting={isExiting}
+        isLoading={isLoading}
+        section={section}
+        onClose={exitFullscreen}
+      >
         <SplitLayout 
           previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
-          
         >
           <SectionComponent />
         </SplitLayout>
-      </div>
+      </FullscreenModal>
     );
   }
      return (    
@@ -184,8 +178,7 @@ const HomePageContent: React.FC = () => {
                         <span className="text-lg font-medium dark:text-gray-200">{section.name}</span>
                          
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 mr-4">
+                    </div>                    <div className="flex items-center gap-2 mr-4">
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -193,8 +186,8 @@ const HomePageContent: React.FC = () => {
                           e.stopPropagation();
                           enterFullscreen(section, SectionComponent);
                         }}
-                        className="rounded-full h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
-                        title="Open in fullscreen"
+                        className="rounded-full h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        title="Open in fullscreen (press ESC to exit)"
                       >
                         <Maximize2 className="h-4 w-4" />
                       </Button>

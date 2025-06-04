@@ -59,7 +59,7 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
       toggleFullscreen={toggleFullscreen}
       exitFullscreen={exitFullscreen2}
     >
-      <div className={`${isFullscreen ? 'h-screen fixed inset-0 z-5 bg-white dark:bg-gray-900' : 'h-[calc(100vh-120px)]'}`}>
+      <div className={`${fullscreenSection ? 'h-full' : 'h-[calc(100vh-120px)]'} transition-all duration-300 ease-in-out`}>
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full"
@@ -69,32 +69,35 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
             minSize={10}
             style={{ 
               display: isCollapsed || isIframeCollapsed ? "none" : "block",
-              transition: "all 0.3s"
+              transition: "all 0.3s ease-in-out"
             }}
-            className="transition-all duration-300"
-          >            <div className="p-4 h-full overflow-auto dark:bg-gray-900 relative">
-              {/* Fullscreen and Collapse Controls */}
-              {/* <div className="absolute top-2 right-2 z-10 flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="rounded-full h-8 w-8 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-                  title={isCollapsed ? "Show editor" : "Hide editor"}
-                >
-                  {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={toggleFullscreen}
-                  className="rounded-full h-8 w-8 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-              </div> */}
+            className="transition-all duration-300 ease-in-out"
+          >            <div className={`${fullscreenSection ? 'p-2 sm:p-3' : 'p-4'} h-full overflow-auto dark:bg-gray-900 relative transition-all duration-300`}>
+              {/* Content controls for fullscreen mode */}
+              {/* {fullscreenSection && (
+                <div className="absolute top-2 right-2 z-10 flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="rounded-full h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200"
+                    title={isCollapsed ? "Show editor" : "Hide editor"}
+                  >
+                    {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setIsIframeCollapsed(!isIframeCollapsed)}
+                    className="rounded-full h-8 w-8 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200"
+                    title={isIframeCollapsed ? "Show preview" : "Hide preview"}
+                    disabled={isCollapsed}
+                  >
+                    {!isIframeCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )} */}
               
               {children}
             </div>
@@ -133,29 +136,26 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
               {!isIframeCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
           </div>
-        </div> */}
-
-        <ResizableHandle withHandle />
+        </div> */}        <ResizableHandle withHandle className="transition-opacity duration-300 hover:opacity-100" />
         
         <ResizablePanel 
           defaultSize={50}
           minSize={10}
           style={{ 
             display: isIframeCollapsed || isCollapsed ? "none" : "block",
-            transition: "all 0.3s" 
+            transition: "all 0.3s ease-in-out" 
           }}
-          className="transition-all duration-300"
-
+          className="transition-all duration-300 ease-in-out"
         >        
           <IFrameViewer 
             url={iframeUrl} 
             title="Website Preview" 
             height="100%" 
-            className="h-full w-full"
+            className="h-full w-full transition-all duration-300"
             focusSection={focusSection}
             key={refreshKey}
           />
-        </ResizablePanel>        </ResizablePanelGroup>
+        </ResizablePanel></ResizablePanelGroup>
       </div>
     </SplitLayoutProvider>
   );
