@@ -88,3 +88,124 @@
 .dark .ql-editor a {
   color: rgb(96, 165, 250); /* dark:text-blue-400 */
 }
+
+/* Clean Image Resize Styles */
+.ql-image-resize-box {
+  position: absolute;
+  border: 2px solid #0ea5e9;
+  background: transparent;
+  z-index: 1000;
+  cursor: move;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.ql-image-resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #0ea5e9;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.ql-image-resize-handle:hover {
+  background: #0284c7;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.ql-image-dimension-display {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+/* Dark mode adjustments */
+.dark .ql-image-resize-box {
+  border-color: #0ea5e9;
+}
+
+.dark .ql-image-resize-handle {
+  border-color: rgb(55, 65, 81);
+  background: #0ea5e9;
+}
+
+.dark .ql-image-dimension-display {
+  background: rgba(31, 41, 55, 0.9);
+  color: rgb(229, 231, 235);
+}
+
+/* Ensure images in editor are properly styled */
+.ql-editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.5rem 0;
+  cursor: pointer;
+  transition: outline 0.2s ease;
+}
+
+.ql-editor img:hover {
+  outline: 1px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+/* Prevent Quill from interfering with our resized images */
+.ql-editor img[style*="width"] {
+  max-width: none !important;
+}
+
+.ql-editor img[style*="height"] {
+  max-height: none !important;
+}
+
+/* When an image has width/height attributes, prioritize them */
+.ql-editor img[width] {
+  max-width: none !important;
+}
+
+.ql-editor img[height] {
+  max-height: none !important;
+}
+
+/* When an image has been resized, respect its dimensions */
+.ql-editor img[data-resized="true"] {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Force images with data-width and data-height to maintain their dimensions */
+.ql-editor img[data-width][data-height] {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Override any Quill attempts to reset image dimensions */
+.ql-editor img[data-resized="true"][style*="width"] {
+  max-width: none !important;
+}
+
+.ql-editor img[data-resized="true"][style*="height"] {
+  max-height: none !important;
+}
+
+/* Ensure resized images with specific width/height attributes are respected */
+.ql-editor img[width][height] {
+  max-width: none !important;
+  max-height: none !important;
+  width: var(--width) !important;
+  height: var(--height) !important;
+}

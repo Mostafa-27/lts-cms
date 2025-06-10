@@ -1,0 +1,69 @@
+/* Custom CSS for better image resize handling */
+
+/* Apply proper box-sizing to all images */
+.ql-editor img {
+  box-sizing: border-box !important;
+  transition: width 0.15s ease, height 0.15s ease !important;
+}
+
+/* Ensure images with width/height attributes maintain their size */
+.ql-editor img[width][height] {
+  max-width: none !important;
+  max-height: none !important;
+  display: block !important;
+}
+
+/* Data-resized images should maintain their dimensions */
+.ql-editor img[data-resized="true"] {
+  max-width: none !important; 
+  max-height: none !important;
+  display: block !important;
+}
+
+/* Handle specifically saved resized images */
+.ql-editor img.resized-image-saved {
+  max-width: none !important;
+  max-height: none !important;
+  display: block !important;
+}
+
+/* Force intrinsic size style to be applied - important for resizing */
+.ql-editor img[width][height]:not([width="0"]):not([height="0"]) {
+  object-fit: contain !important;
+}
+
+/* Ensure Quill can't override these styles */
+.ql-container .ql-editor img[width][height],
+.ql-container .ql-editor img[data-resized="true"] {
+  width: initial !important;
+  height: initial !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Selected image styling */
+.ql-editor img.selected-for-resize {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Unsaved image styling */
+.ql-editor img.has-unsaved-resize {
+  outline: 2px dashed #ff9800 !important;
+  outline-offset: 2px !important;
+}
+
+/* Saved image styling for feedback */
+.ql-editor img.resize-saved {
+  outline: 3px solid #28a745 !important;
+  outline-offset: 2px !important;
+  transition: outline-color 0.5s ease-in-out !important;
+}
+
+/* Ensure Quill doesn't override our styles */
+.ql-editor .ql-size-huge img[width][height],
+.ql-editor .ql-size-large img[width][height],
+.ql-editor .ql-size-small img[width][height] {
+  width: attr(width px) !important;
+  height: attr(height px) !important;
+}

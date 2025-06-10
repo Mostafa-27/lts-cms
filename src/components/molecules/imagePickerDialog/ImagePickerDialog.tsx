@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { GalleryViewer } from '@/components/organism/galleries';
 import type { GalleryImage } from '@/services/galleryService';
@@ -37,6 +37,9 @@ const ImagePickerDialog: React.FC<ImagePickerDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>      <DialogContent className="max-w-5xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Browse through your gallery and select an image to insert into your content.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
