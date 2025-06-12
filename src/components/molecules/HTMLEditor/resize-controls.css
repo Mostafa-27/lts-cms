@@ -1,0 +1,88 @@
+/* Custom styles for resize controls */
+.resize-controls {
+  position: fixed !important;
+  z-index: 9999 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  min-width: 320px;
+  transition: opacity 0.2s ease;
+  pointer-events: all;
+  transform: translateY(0);
+  background-color: #fff;
+  border: 1px solid #ddd;
+}
+
+.resize-controls.active {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  opacity: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.resize-controls button {
+  min-width: 40px;
+  height: 30px;
+  margin: 2px;
+  font-weight: bold;
+  cursor: pointer !important;
+  user-select: none;
+}
+
+.dark .resize-controls {
+  background-color: #1e293b; 
+  border-color: #475569;
+}
+
+/* Force controls to display with higher priority */
+.resize-controls.active {
+  opacity: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Ensure buttons are visible and positioned correctly */
+.resize-controls .flex {
+  display: flex !important;
+}
+
+.resize-controls .flex-col {
+  flex-direction: column !important;
+}
+
+.resize-controls .gap-1 {
+  gap: 0.25rem !important;
+}
+
+/* Style the dimensions display */
+.resize-controls .dimensions-display {
+  text-align: center;
+  font-weight: bold;
+  padding: 5px 0;
+  margin-bottom: 5px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.dark .resize-controls .dimensions-display {
+  background-color: #2d3748;
+  color: #e2e8f0;
+}
+
+/* Style for selected images */
+img.selected-for-resize {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.resize-controls .gap-2 {
+  gap: 0.5rem !important;
+}
+
+/* Selected image styling */
+img.selected-for-resize {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}

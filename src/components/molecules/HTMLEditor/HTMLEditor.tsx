@@ -3,6 +3,7 @@ import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './quill-dark-theme.css';
 import './image-resize.css'; // Import custom image resize styles
+import './resize-controls.css'; // Import resize controls styles
 import { ImagePickerDialog } from '../imagePickerDialog';
 import SimpleImageResize from './SimpleImageResize';
 import ResizableImageBlot from './ResizableImageBlot';
@@ -129,6 +130,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
   }, [editorContent]);  // Optimized content change handler with proper cleanup
   const handleChange = useCallback((content: string) => {
     // Enhanced image URL fixing with better regex and preserve dimensions
+    console.log('Handling content change:', content);
     const fixedContent = content.replace(
       /<img([^>]*)src="([^"]+)"([^>]*)>/g, 
       (match, before, src, after) => {

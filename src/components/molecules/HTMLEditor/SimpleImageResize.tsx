@@ -1,16 +1,186 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Delta } from 'quill'; // Import Delta from Quill
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { Delta } from 'quill';
+import Quill from 'quill';
+import { 
+  isImageValid, 
+  safelyApplyStyles, 
+  safelyApplyAttributes,
+  safelyGetImageDimensions,
+  persistImageSize
+} from './image-safety';
+
+// Helper function to find an image position in Quill content
+const findImageInQuillContent = (quill: any, imgSrc: string): number => {
+  try {
+    const contents = quill.getContents();
+    let imageIndex = -1;
+    
+    if (!contents || !contents.ops) {
+      return -1;
+    }
+    
+    let index = 0;
+    for (let i = 0; i < contents.ops.length; i++) {
+      const op = contents.ops[i];
+      
+      // Skip text inserts
+      if (typeof op.insert === 'string') {
+        index += op.insert.length;
+        continue;
+      }
+      
+      // Check if this is an image
+      if (op.insert && op.insert.image) {
+        // Check if this is our target image
+        if (op.insert.image === imgSrc) {
+          imageIndex = index;
+          break;
+        }
+      }
+      
+      // Each non-text insert counts as 1 position
+      index += 1;
+    }
+    
+    return imageIndex;
+  } catch (error) {
+    console.error('Error finding image in Quill content:', error);
+    return -1;
+  }
+};
 
 interface SimpleImageResizeProps {
   quillRef: React.RefObject<any>;
 }
 
 const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
+  // State declarations
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const [showControls, setShowControls] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  
+  // Refs
+  const controlsRef = useRef<HTMLDivElement>(null);
+  
+  // Helper function to calculate position for controls - returns position object instead of manipulating DOM
+  const calculateControlsPosition = useCallback((imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
+    // Default position
+    let position = { top: 100, left: 100 };
+    
+    if (!imageElement || !document.body.contains(imageElement)) {
+      return position;
+    }
+    
+    try {
+      const rect = imageElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      console.log('Control dimensions:', { height: controlsHeight, width: controlsWidth });
+      console.log('Image rect:', rect);
+      
+      // Position above the image by default with a safe margin
+      let top = Math.max(10, rect.top - controlsHeight - 15);
+      
+      // If there's not enough space above, position below with offset
+      if (top < 10) {
+        top = Math.min(viewportHeight - controlsHeight - 10, rect.bottom + 15);
+      }
+      
+      // Ensure controls are always within viewport
+      if (top + controlsHeight > viewportHeight - 10) {
+        top = Math.max(10, viewportHeight - controlsHeight - 20);
+      }
+      
+      // Center horizontally relative to the image
+      let left = rect.left + (rect.width / 2) - (controlsWidth / 2);
+      
+      // Keep within viewport bounds
+      if (left + controlsWidth > viewportWidth - 10) {
+        left = viewportWidth - controlsWidth - 10;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      
+      position = { 
+        top: Math.round(top),
+        left: Math.round(left)
+      };
+      
+      console.log('Calculated controls position:', position);
+    } catch (error) {
+      console.error('Error calculating control position:', error);
+    }
+    
+    return position;
+  }, []);
 
+  // Function to safely update the position of the controls panel
+  const updateControlsPosition = useCallback((controlsElement: HTMLDivElement, imageElement: HTMLImageElement | null) => {
+    if (!controlsElement || !imageElement || !document.body.contains(imageElement)) {
+      return;
+    }
+
+    try {
+      const position = calculateControlsPosition(imageElement);
+      
+      // Apply position updates via style properties
+      controlsElement.style.top = `${position.top}px`;
+      controlsElement.style.left = `${position.left}px`;
+      controlsElement.style.display = 'block';
+      controlsElement.style.visibility = 'visible';
+      
+      // Add active class for transition effects
+      controlsElement.classList.add('active');
+    } catch (error) {
+      console.error('Error updating controls position:', error);
+    }
+  }, [calculateControlsPosition]);
+
+  // Update controls position whenever selectedImage or showControls change
+  useEffect(() => {
+    if (controlsRef.current && selectedImage && showControls) {
+      // Wait until after React's rendering cycle is complete
+      setTimeout(() => {
+        if (controlsRef.current && selectedImage && document.body.contains(selectedImage)) {
+          updateControlsPosition(controlsRef.current, selectedImage);
+        }
+      }, 0);
+    }
+  }, [selectedImage, showControls, updateControlsPosition]);
+
+  // Clean up any DOM elements on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any lingering UI state
+      document.body.classList.remove('resizing-active');
+      
+      // Remove classes from any selected images
+      document.querySelectorAll('img.selected-for-resize').forEach(img => {
+        try {
+          img.classList.remove('selected-for-resize');
+          (img as HTMLElement).style.outline = '';
+        } catch (e) {
+          // Ignore errors on cleanup - the node might already be gone
+        }
+      });
+      
+      // Make sure we reset component state to avoid lingering references
+      setSelectedImage(null);
+      setShowControls(false);
+      setHasChanges(false);
+      
+      // Hide the controls panel if it exists
+      if (controlsRef.current) {
+        controlsRef.current.style.display = 'none';
+        controlsRef.current.style.visibility = 'hidden';
+      }
+    };
+  }, []);
+
+  // Image click handler
   const handleImageClick = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'IMG') {
@@ -24,99 +194,169 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       setShowControls(true);
       setHasChanges(false);
       
-      // Update dimensions display
-      setDimensions({
-        width: imgElement.offsetWidth,
-        height: imgElement.offsetHeight
+      // Update dimensions using our safe utility
+      const { width, height } = safelyGetImageDimensions(imgElement);
+      
+      // Update state dimensions
+      setDimensions({ width, height });
+      
+      // Ensure data attributes are set for consistency
+      safelyApplyAttributes(imgElement, {
+        'data-width': width.toString(),
+        'data-height': height.toString()
       });
       
       // Remove selection from other images
       if (quillRef.current) {
         const editor = quillRef.current.getEditor().root;
         editor.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-          img.style.outline = '';
+          safelyApplyStyles(img, { 'outline': '' });
         });
       }
       
-      // Highlight selected image
-      imgElement.style.outline = '2px solid #007bff';
+      // Highlight selected image and add a CSS class for styling
+      safelyApplyStyles(imgElement, { 'outline': '2px solid #007bff' });
+      imgElement.classList.add('selected-for-resize');
     }
   }, [quillRef]);
 
+  // Outside click handler
   const handleClickOutside = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
-    if (target.tagName !== 'IMG' && !target.closest('.resize-controls')) {
-      setSelectedImage(null);
-      setShowControls(false);
-      setHasChanges(false);
+    
+    if (document.body.classList.contains('resizing-active') || 
+        document.querySelector('.resize-controls.active')) {
+      console.log('Skipping outside click during active resize operation');
+      return;
+    }
+    
+    if (target.tagName !== 'IMG' && 
+        !target.closest('.resize-controls') && 
+        !target.closest('.ql-editor button')) {
       
-      // Remove outlines from all images
+      if (target.tagName === 'BUTTON' && 
+          (target.closest('.resize-controls') || 
+           target.textContent?.match(/W[\+\-]|H[\+\-]|Reset|Save/))) {
+        console.log('Clicked a resize control button, keeping panel open');
+        return;
+      }
+      
+      // First remove highlight from images
       if (quillRef.current) {
         const editor = quillRef.current.getEditor().root;
         editor.querySelectorAll('img').forEach((img: HTMLImageElement) => {
-          img.style.outline = '';
+          safelyApplyStyles(img, { 'outline': '' });
+          img.classList.remove('selected-for-resize');
         });
       }
+      
+      // Then hide controls and reset state to prevent race conditions
+      if (controlsRef.current) {
+        controlsRef.current.classList.remove('active');
+        controlsRef.current.style.display = 'none';
+        controlsRef.current.style.visibility = 'hidden';
+      }
+      
+      // Finally update the state
+      setSelectedImage(null);
+      setShowControls(false);
+      setHasChanges(false);
     }
   }, [quillRef]);
+
+  // Window resize handler
+  useEffect(() => {
+    if (!selectedImage || !showControls) return;
+
+    const handleWindowResize = () => {
+      if (controlsRef.current && selectedImage) {
+        updateControlsPosition(controlsRef.current, selectedImage);
+      }
+    };
+    
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, [selectedImage, showControls, updateControlsPosition]);
+  // Setup event listeners
   useEffect(() => {
     if (!quillRef.current) return;
 
     const quill = quillRef.current.getEditor();
     const editor = quill.root;
 
+    // Use click event for more reliable interaction
     editor.addEventListener('click', handleImageClick);
-    document.addEventListener('click', handleClickOutside);
+    
+    // Delay outside click handling to prevent conflicts with resize operations
+    const handleOutsideClickWithDelay = (e: Event) => {
+      // Skip handling if we're in resize mode or controls are active
+      if (document.body.classList.contains('resizing-active') ||
+          document.querySelector('.resize-controls.active')) {
+        console.log('Skipping outside click during active resize');
+        return;
+      }
+      
+      // Add a more significant delay to allow other click handlers to complete
+      setTimeout(() => {
+        // Double check we're not in resize mode before proceeding
+        if (!document.body.classList.contains('resizing-active') &&
+            !document.querySelector('.resize-controls.active')) {
+          handleClickOutside(e);
+        }
+      }, 50);
+    };
+    
+    document.addEventListener('click', handleOutsideClickWithDelay);
 
     return () => {
       editor.removeEventListener('click', handleImageClick);
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('click', handleOutsideClickWithDelay);
     };
-  }, [quillRef, handleImageClick, handleClickOutside]);  // Add a useEffect to restore image dimensions - but only for properly saved images
+  }, [quillRef, handleImageClick, handleClickOutside]);
+  
+  // Image dimension restoration
   useEffect(() => {
     if (!quillRef.current) return;
 
     const restoreImageDimensions = () => {
-      const quill = quillRef.current.getEditor();
-      const editor = quill.root;
-      const images = editor.querySelectorAll('img[data-resized="true"]');
+      if (!quillRef.current) return;
       
-      images.forEach((img: HTMLImageElement) => {
-        const savedWidth = img.getAttribute('data-width');
-        const savedHeight = img.getAttribute('data-height');
+      try {
+        const quill = quillRef.current.getEditor();
+        const editor = quill.root;
+        const images = editor.querySelectorAll('img[data-resized="true"]');
         
-        // Only restore if image has been properly saved and dimensions are different
-        if (savedWidth && savedHeight) {
-          const currentWidth = img.offsetWidth;
-          const currentHeight = img.offsetHeight;
+        images.forEach((img: HTMLImageElement) => {
+          if (!isImageValid(img)) return;
           
-          // Only restore if the current dimensions don't match saved dimensions
-          if (Math.abs(currentWidth - parseInt(savedWidth)) > 2 || 
-              Math.abs(currentHeight - parseInt(savedHeight)) > 2) {
+          const savedWidth = img.getAttribute('data-width');
+          const savedHeight = img.getAttribute('data-height');
+          
+          if (savedWidth && savedHeight) {
+            const currentWidth = img.offsetWidth;
+            const currentHeight = img.offsetHeight;
             
-            console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
-            
-            // Force the image to maintain its saved dimensions
-            img.setAttribute('width', savedWidth);
-            img.setAttribute('height', savedHeight);
-            img.style.setProperty('width', `${savedWidth}px`, 'important');
-            img.style.setProperty('height', `${savedHeight}px`, 'important');
-            img.style.setProperty('max-width', 'none', 'important');
-            img.style.setProperty('max-height', 'none', 'important');
-            
-            // Additional enforcement
-            (img as any).__permanentWidth = savedWidth;
-            (img as any).__permanentHeight = savedHeight;
-            (img as any).__isPermanentlyResized = true;
+            if (Math.abs(currentWidth - parseInt(savedWidth)) > 2 || 
+                Math.abs(currentHeight - parseInt(savedHeight)) > 2) {
+              
+              console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
+                // Use our dedicated helper to apply dimensions consistently
+              persistImageSize(img, parseInt(savedWidth), parseInt(savedHeight));
+              
+              // Store dimensions as properties on the element for faster access
+              (img as any).__permanentWidth = savedWidth;
+              (img as any).__permanentHeight = savedHeight;
+              (img as any).__isPermanentlyResized = true;
+            }
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error("Error restoring image dimensions:", error);
+      }
     };
 
-    // Restore dimensions immediately
     restoreImageDimensions();
 
-    // Set up observer to catch any changes - but be less aggressive
     const observer = new MutationObserver(() => {
       setTimeout(restoreImageDimensions, 50);
     });
@@ -128,10 +368,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       attributeFilter: ['style', 'width', 'height']
     });
 
-    // Less aggressive interval - only run every 2 seconds
     const intervalId = setInterval(restoreImageDimensions, 2000);
 
-    // Listen for Quill text changes and restore after a delay
     const quill = quillRef.current.getEditor();
     const handleTextChange = () => {
       setTimeout(restoreImageDimensions, 100);
@@ -144,208 +382,503 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       clearInterval(intervalId);
       quill.off('text-change', handleTextChange);
     };
-  }, [quillRef]);const handleResize = useCallback((direction: 'width' | 'height', delta: number) => {
+  }, [quillRef]);  // Handler for resizing an image
+  const handleResize = useCallback((direction: 'width' | 'height', delta: number) => {
     console.log(`HandleResize called: ${direction}, delta: ${delta}`);
     
-    if (!selectedImage) {
-      console.warn('No image selected');
+    if (!selectedImage || !selectedImage.src) {
+      console.warn('No valid image selected');
       return;
     }
-
-    // Get current dimensions from the image itself
-    const rect = selectedImage.getBoundingClientRect();
-    const currentWidth = rect.width;
-    const currentHeight = rect.height;
     
-    console.log(`Current dimensions: ${currentWidth}x${currentHeight}`);
+    // Mark as resizing active to prevent other events
+    document.body.classList.add('resizing-active');
+    
+    // Get image source for later reference
+    const imgSrc = selectedImage.src;
+    
+    // Use dimensions from state for consistency with multiple clicks
+    // This ensures each resize operation uses the most recent dimensions
+    const currentWidth = dimensions.width || 0;
+    const currentHeight = dimensions.height || 0;
+    
+    console.log('Current dimensions:', { width: currentWidth, height: currentHeight });
     
     // Calculate new dimensions
     let newWidth: number;
     let newHeight: number;
 
     if (direction === 'width') {
-      newWidth = Math.max(50, Math.min(800, currentWidth + delta));
+      newWidth = Math.max(50, currentWidth + delta);
       // Maintain aspect ratio
-      if (selectedImage.naturalWidth && selectedImage.naturalHeight) {
-        const aspectRatio = selectedImage.naturalHeight / selectedImage.naturalWidth;
-        newHeight = newWidth * aspectRatio;
-      } else {
-        newHeight = (newWidth / currentWidth) * currentHeight;
-      }
+      const aspectRatio = currentHeight / currentWidth;
+      newHeight = Math.round(newWidth * aspectRatio);
     } else {
-      newHeight = Math.max(30, Math.min(600, currentHeight + delta));
+      newHeight = Math.max(30, currentHeight + delta);
       // Maintain aspect ratio
-      if (selectedImage.naturalWidth && selectedImage.naturalHeight) {
-        const aspectRatio = selectedImage.naturalWidth / selectedImage.naturalHeight;
-        newWidth = newHeight * aspectRatio;
-      } else {
-        newWidth = (newHeight / currentHeight) * currentWidth;
-      }
+      const aspectRatio = currentWidth / currentHeight;
+      newWidth = Math.round(newHeight * aspectRatio);
     }
     
-    console.log(`New dimensions: ${Math.round(newWidth)}x${Math.round(newHeight)}`);
+    const roundedWidth = Math.round(newWidth);
+    const roundedHeight = Math.round(newHeight);
     
-    // Apply new dimensions directly to the image
-    selectedImage.style.width = `${Math.round(newWidth)}px`;
-    selectedImage.style.height = `${Math.round(newHeight)}px`;
-    selectedImage.style.maxWidth = 'none';
-    selectedImage.style.maxHeight = 'none';
-
-    // Update dimensions state for display
+    console.log('New dimensions:', { width: roundedWidth, height: roundedHeight });
+    
+    // Always update state first to ensure consistency
     setDimensions({
-      width: Math.round(newWidth),
-      height: Math.round(newHeight)
+      width: roundedWidth,
+      height: roundedHeight
     });
-
-    // Mark as having changes - MANUAL SAVE ONLY
-    setHasChanges(true);
-    console.log('Resize applied, changes marked as unsaved');
-  }, [selectedImage]);  const resetSize = useCallback(() => {
+    console.log('Setting dimensions state to:', { width: roundedWidth, height: roundedHeight });
+    
+    try {
+      // First try to use our selected image directly
+      if (isImageValid(selectedImage)) {
+        persistImageSize(selectedImage, roundedWidth, roundedHeight);
+        selectedImage.classList.add('has-unsaved-resize');
+      } else {
+        // If the image reference is no longer valid, find the image in the editor
+        if (quillRef.current) {
+          const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${imgSrc}"]`);
+          if (images.length > 0) {
+            const updatedImage = images[0] as HTMLImageElement;
+            persistImageSize(updatedImage, roundedWidth, roundedHeight);
+            updatedImage.classList.add('has-unsaved-resize');
+            // Update the selected image reference
+            setSelectedImage(updatedImage);
+          }
+        }
+      }
+      
+      setHasChanges(true);
+    } catch (e) {
+      console.error('Error applying resize:', e);
+    }
+    
+    // Update controls position with a slight delay to ensure the browser has rendered the resized image
+    setTimeout(() => {
+      // Get fresh reference to the image
+      let currentImage = selectedImage;
+      
+      if (!isImageValid(currentImage) && quillRef.current) {
+        const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${imgSrc}"]`);
+        if (images.length > 0) {
+          currentImage = images[0] as HTMLImageElement;
+          setSelectedImage(currentImage);
+        }
+      }
+      
+      if (controlsRef.current && currentImage && isImageValid(currentImage)) {
+        updateControlsPosition(controlsRef.current, currentImage);
+        controlsRef.current.classList.add('active');
+        
+        // Re-apply selection appearance
+        safelyApplyStyles(currentImage, {
+          'outline': '2px solid #007bff'
+        });
+        currentImage.classList.add('selected-for-resize');
+      }
+      
+      // Remove resize flag after a delay
+      setTimeout(() => {
+        document.body.classList.remove('resizing-active');
+      }, 200);
+    }, 100);
+  }, [selectedImage, updateControlsPosition, dimensions]);
+  
+  // Handler for resetting image size
+  const resetSize = useCallback(() => {
     if (!selectedImage) return;
     
     console.log('Reset size called');
     
-    // Remove all custom sizing styles
-    selectedImage.style.removeProperty('width');
-    selectedImage.style.removeProperty('height');
-    selectedImage.style.removeProperty('max-width');
-    selectedImage.style.removeProperty('max-height');
-    selectedImage.style.removeProperty('object-fit');
-    
-    // Reset to editor defaults
-    selectedImage.style.setProperty('max-width', '100%');
-    selectedImage.style.setProperty('height', 'auto');
-    
-    // Update dimensions display
-    setTimeout(() => {
-      setDimensions({
-        width: selectedImage.offsetWidth,
-        height: selectedImage.offsetHeight
+    try {
+      if (!isImageValid(selectedImage)) {
+        console.warn('Cannot reset image: Image is no longer valid');
+        return;
+      }
+      
+      // Save the current outline for later restoration
+      const originalOutline = selectedImage.style.outline;
+      
+      // Reset all styling properties safely
+      const propertiesToRemove = ['width', 'height', 'max-width', 'max-height', 'object-fit'];
+      propertiesToRemove.forEach(prop => {
+        try {
+          selectedImage.style.removeProperty(prop);
+        } catch (e) {
+          console.warn(`Error removing property ${prop}:`, e);
+        }
       });
-    }, 100);
-    
-    // Mark as having changes - NO AUTO-SAVE
-    setHasChanges(true);
-    console.log('Size reset, changes marked as unsaved');
-  }, [selectedImage]);  // Function to manually save changes - PRESERVE DIMENSIONS PERMANENTLY
+      
+      // Remove all size-related attributes safely
+      const attributesToRemove = ['width', 'height', 'data-width', 'data-height', 'data-resized'];
+      attributesToRemove.forEach(attr => {
+        try {
+          selectedImage.removeAttribute(attr);
+        } catch (e) {
+          console.warn(`Error removing attribute ${attr}:`, e);
+        }
+      });
+      
+      // Remove any resize-related classes safely
+      try {
+        selectedImage.classList.remove('resized-image-saved');
+        selectedImage.classList.remove('has-unsaved-resize');
+      } catch (e) {
+        console.warn('Error removing classes:', e);
+      }
+      
+      // Apply default responsive behavior safely
+      safelyApplyStyles(selectedImage, {
+        'max-width': '100%',
+        'height': 'auto',
+        'width': 'auto'
+      });
+      
+      // Force a reflow to ensure the browser recognizes the changes
+      void selectedImage.offsetHeight;
+      
+      // After a brief delay to let the browser compute natural dimensions
+      setTimeout(() => {
+        if (selectedImage && isImageValid(selectedImage)) {
+          // Update the dimensions state with the new natural dimensions
+          const { width, height } = safelyGetImageDimensions(selectedImage);
+          setDimensions({
+            width: Math.round(width),
+            height: Math.round(height)
+          });
+          
+          // Update the control panel position
+          if (controlsRef.current) {
+            updateControlsPosition(controlsRef.current, selectedImage);
+          }
+        }
+      }, 100);
+      
+      // Mark that we have changes
+      setHasChanges(true);
+      
+      // Visual feedback for the reset
+      safelyApplyStyles(selectedImage, {
+        'outline': '2px dashed #ff9800'
+      });
+      
+      setTimeout(() => {
+        if (selectedImage && isImageValid(selectedImage)) {
+          safelyApplyStyles(selectedImage, {
+            'outline': originalOutline || ''
+          });
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Error when resetting image size:', error);
+    }
+  }, [selectedImage, updateControlsPosition]);
+  // Handler for saving image changes
   const saveChanges = useCallback(() => {
     console.log('Save changes called, hasChanges:', hasChanges);
     
-    if (!quillRef.current || !hasChanges || !selectedImage) {
-      console.log('No changes to save or no quill ref or no selected image');
+    if (!quillRef.current || !hasChanges) {
+      console.log('No changes to save or no quill ref');
       return;
     }
     
-    try {
+    if (!selectedImage || !isImageValid(selectedImage)) {
+      console.log('Selected image is no longer valid, attempting to recover');
+      // We'll try to find the image in the editor below
+    }
+    
+  try {
       const quill = quillRef.current.getEditor();
       
-      // Get the current CSS dimensions
-      const currentWidth = Math.round(selectedImage.offsetWidth);
-      const currentHeight = Math.round(selectedImage.offsetHeight);
+      // CRITICAL: Ensure we're using the latest dimensions from state
+      // This ensures all cumulative changes are reflected
+      const currentWidth = dimensions.width;
+      const currentHeight = dimensions.height;
+      
+      // Make sure we have valid dimensions
+      if (!currentWidth || !currentHeight) {
+        console.warn('Invalid dimensions, aborting save');
+        return;
+      }
       
       console.log('Saving dimensions:', currentWidth, currentHeight);
+        // Get image source for identification
+      let imgSrc = '';
+      let currentSelectedImage: HTMLImageElement | null = selectedImage;
       
-      // Store the image source for later use
-      const imgSrc = selectedImage.getAttribute('src') || '';
-      
-      // Simple approach: Set width/height attributes directly on the image
-      // This avoids complex Quill operations that might fail
-      selectedImage.setAttribute('width', currentWidth.toString());
-      selectedImage.setAttribute('height', currentHeight.toString());
-      selectedImage.setAttribute('data-resized', 'true');
-      selectedImage.setAttribute('data-width', currentWidth.toString());
-      selectedImage.setAttribute('data-height', currentHeight.toString());
-      
-      // Apply necessary CSS styles with !important to ensure they take precedence
-      selectedImage.style.setProperty('width', `${currentWidth}px`, 'important');
-      selectedImage.style.setProperty('height', `${currentHeight}px`, 'important');
-      selectedImage.style.setProperty('max-width', 'none', 'important');
-      selectedImage.style.setProperty('max-height', 'none', 'important');
-      selectedImage.style.setProperty('display', 'block', 'important');
-      
-      // Ensure the HTML content is updated in the editor
-      const updatedHTML = quill.root.innerHTML;
-      
-      // Update the editor content using clipboard API (safer than updateContents)
-      quill.clipboard.dangerouslyPasteHTML(updatedHTML, 'api');
-      
-      // Now trigger the parent onChange handler to save changes
-      setTimeout(() => {
-        // This delay ensures React has time to process the DOM changes
-        const finalHTML = quill.root.innerHTML;
-        
-        // Find the parent React component and trigger onChange
-        if (quillRef.current && quillRef.current.props && quillRef.current.props.onChange) {
-          quillRef.current.props.onChange(finalHTML);
-          console.log('⚡ Triggered onChange via React props');
+      // If the selected image is no longer valid, try to find it in the editor
+      if (!selectedImage || !isImageValid(selectedImage)) {
+        // We need to find the image in the editor
+        const images = quillRef.current.getEditor().root.querySelectorAll('img.has-unsaved-resize');
+        if (images.length > 0) {
+          currentSelectedImage = images[0] as HTMLImageElement;
+          setSelectedImage(currentSelectedImage); // Update our reference
+          console.log('Recovered image reference');
+        } else {
+          console.warn('Could not find image to save');
+          return;
         }
-      }, 50);
+      }
       
-      // Reset changes flag
-      setHasChanges(false);
+      // At this point currentSelectedImage should be valid, but let's double-check
+      if (!currentSelectedImage || !isImageValid(currentSelectedImage)) {
+        console.warn('Invalid image reference even after recovery attempt');
+        return;
+      }
       
-      console.log('✅ Image size saved with HTML attributes:', `width="${currentWidth}" height="${currentHeight}"`);
-      console.log('Image element after save:', selectedImage.outerHTML);
+      imgSrc = currentSelectedImage.getAttribute('src') || '';
+      if (!imgSrc) {
+        console.warn('No image source found, aborting save');
+        return;
+      }
       
-      // Show visual feedback on the image
-      const originalOutline = selectedImage.style.outline;
-      selectedImage.style.outline = '3px solid #28a745';
+      // Create a function to safely update image attributes & style
+      const updateImageSize = (img: HTMLImageElement) => {
+        if (!isImageValid(img)) return;
+        
+        console.log('Persisting image dimensions:', currentWidth, currentHeight);
+        
+        // Use our dedicated helper to ensure consistent application of size
+        persistImageSize(img, currentWidth, currentHeight);
+        
+        // Force a browser repaint to ensure the changes are applied
+        void img.offsetHeight;
+      };      // Update the selected image with the current dimensions from state
+      // At this point currentSelectedImage is guaranteed to be non-null because of our checks
+      updateImageSize(currentSelectedImage as HTMLImageElement);
+      safelyApplyStyles(currentSelectedImage, {
+        'max-height': 'none !important',
+        'display': 'block'
+      });
+      
+      // Update React-friendly way
+      // Since isImageValid is our guard (and we already checked above), 
+      // we can be sure currentSelectedImage is valid at this point
+      currentSelectedImage.classList.remove('has-unsaved-resize');
+      currentSelectedImage.classList.add('resized-image-saved');
+        
+    // Force Quill to register our changes by directly updating the HTML
+        // This ensures the image retains the correct size when saved
+        setTimeout(() => {
+          if (quillRef.current) {
+            try {
+              console.log('Starting save process with dimensions:', currentWidth, currentHeight);
+              
+              // Instead of innerHTML approach which can lead to issues,
+              // let's force an update through Quill's delta API
+              const quill = quillRef.current.getEditor();
+              
+              // First, identify the image in the document
+              const imageIndex = findImageInQuillContent(quill, imgSrc);
+              
+              if (imageIndex !== -1) {
+                // Store the current selection
+                const range = quill.getSelection();
+                
+                // Create a Delta to update just the image attributes
+                const delta = new Delta();
+                delta.retain(imageIndex);
+                delta.retain(1, { 
+                  attributes: { 
+                    width: currentWidth.toString(),
+                    height: currentHeight.toString()
+                  } 
+                });
+                
+                // Apply the delta
+                console.log('Applying delta to update image at index', imageIndex);
+                quill.updateContents(delta, 'api');
+                
+                // Force the browser to redraw
+                void document.body.offsetHeight;
+                
+                // Restore selection if it existed
+                if (range) {
+                  quill.setSelection(range);
+                }
+                
+                console.log('✅ Updated image via Quill delta');
+              } else {
+                // Fallback to innerHTML approach if Delta fails
+                console.log('Fallback to innerHTML approach');
+                const html = quillRef.current.getEditor().root.innerHTML;
+                quillRef.current.getEditor().root.innerHTML = html;
+              }
+              
+              // Re-select the image to maintain the active state
+              setTimeout(() => {
+                const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${imgSrc}"]`);
+                if (images.length > 0) {
+                  const updatedImage = images[0] as HTMLImageElement;
+                  // Apply current dimensions again to ensure they're properly set
+                  updateImageSize(updatedImage);
+                  setSelectedImage(updatedImage);
+                  
+                  // Re-apply the resize properties to ensure they stick
+                  safelyApplyStyles(updatedImage, {
+                    'width': `${currentWidth}px !important`,
+                    'height': `${currentHeight}px !important`,
+                    'max-width': 'none !important',
+                    'max-height': 'none !important'
+                  });
+                }
+              }, 50);
+            } catch (error) {
+              console.error('Error during save process:', error);
+              // Fallback to a simpler approach
+              const html = quillRef.current.getEditor().root.innerHTML;
+              quillRef.current.getEditor().root.innerHTML = html;
+            }
+          }
+        }, 10);
+      
+    // Trigger parent onChange handler with a larger delay to ensure DOM updates first
       setTimeout(() => {
-        selectedImage.style.outline = originalOutline;
-      }, 2000);
+        if (!quillRef.current) return;
+        
+        try {
+          // Force update all images with data-resized attribute
+          const images = quillRef.current.getEditor().root.querySelectorAll('img[data-resized="true"]');
+          images.forEach((img: HTMLImageElement) => {
+            const width = img.getAttribute('data-width');
+            const height = img.getAttribute('data-height');
+            if (width && height) {
+              persistImageSize(img, parseInt(width), parseInt(height));
+            }
+          });
+          
+          // Get the final HTML after all our changes
+          const finalHTML = quillRef.current.getEditor().root.innerHTML;
+          
+          if (quillRef.current.props?.onChange) {
+            quillRef.current.props.onChange(finalHTML);
+            console.log('⚡ Triggered onChange via React props with final HTML');
+          }
+        } catch (error) {
+          console.error('Error in final onChange trigger:', error);
+        }
+      }, 200);
       
-      // Apply a special class to the image that our CSS can target
-      selectedImage.classList.add('resized-image-saved');
+      setHasChanges(false);      console.log('✅ Image size saved with HTML attributes:',` width="${currentWidth}" height="${currentHeight}"`);
+      
+      // Show visual feedback
+      if (currentSelectedImage && isImageValid(currentSelectedImage)) {
+        // Store current outline for later restoration
+        const originalOutline = currentSelectedImage.style.outline;
+        
+        // Apply success highlight
+        safelyApplyStyles(currentSelectedImage, {
+          'outline': '3px solid #28a745'
+        });
+        
+        // Capture source to find the image later if needed
+        const savedImgSrc = imgSrc;
+        
+        setTimeout(() => {
+          // Get a fresh reference to the image if needed
+          let imageToUpdate = currentSelectedImage;
+          
+          if (!imageToUpdate || !isImageValid(imageToUpdate)) {
+            // Try to find the image by src
+            if (quillRef.current && savedImgSrc) {
+              const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${savedImgSrc}"]`);
+              if (images && images.length > 0) {
+                imageToUpdate = images[0] as HTMLImageElement;
+                // Update our reference if it's valid
+                if (isImageValid(imageToUpdate)) {
+                  setSelectedImage(imageToUpdate);
+                }
+              }
+            }
+          }
+          
+          // Reset outline if we have a valid image reference
+          if (imageToUpdate && isImageValid(imageToUpdate)) {
+            safelyApplyStyles(imageToUpdate, {
+              'outline': originalOutline || ''
+            });
+          }
+        }, 2000);
+      }
       
     } catch (error) {
       console.error('Error saving image resize changes:', error);
+      
+      // Fallback approach for error cases
+      try {
+        if (isImageValid(selectedImage)) {
+          const { width, height } = safelyGetImageDimensions(selectedImage);
+          
+          safelyApplyAttributes(selectedImage, {
+            'width': width.toString(),
+            'height': height.toString(),
+            'data-width': width.toString(),
+            'data-height': height.toString(),
+            'data-resized': 'true'
+          });
+          
+          safelyApplyStyles(selectedImage, {
+            'width': `${width}px`,
+            'height': `${height}px`,
+            'max-width': 'none',
+            'max-height': 'none'
+          });
+          
+          console.log('Applied fallback save with dimensions:', width, height);
+          setHasChanges(false);
+        }
+      } catch (fallbackError) {
+        console.error('Even fallback save failed:', fallbackError);
+      }
     }
-  }, [quillRef, hasChanges, selectedImage]);if (!showControls || !selectedImage) return null;
-
-  // Calculate position more reliably 
-  const rect = selectedImage.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  const viewportWidth = window.innerWidth;
+  }, [quillRef, hasChanges, selectedImage, dimensions]);
   
-  // Position controls above image, but if not enough space, position below
-  const controlsHeight = 60;
-  let top = rect.top - controlsHeight - 10;
-  if (top < 10) {
-    top = rect.bottom + 10;
-  }
+  // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
+  // This helps prevent the DOM node removal errors in React
+  const isVisible = Boolean(showControls && selectedImage);
   
-  // Keep controls within viewport width
-  let left = rect.left;
-  if (left + 300 > viewportWidth) {
-    left = viewportWidth - 310;
-  }
-  if (left < 10) {
-    left = 10;
-  }
-  
+  // Get dimensions to display (or default to 0x0)
+  const displayWidth = dimensions.width || 0;
+  const displayHeight = dimensions.height || 0;
+    
+  // Render resize controls - always render but conditionally show/hide
   return (
     <div 
-      className="resize-controls fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-3 shadow-lg z-50"
+      ref={controlsRef}
+      className={`resize-controls ${document.body.classList.contains('resizing-active') ? 'active' : ''}`}
       style={{
-        top: `${top}px`,
-        left: `${left}px`,
+        position: 'fixed',
+        top: '100px', // Default position, will be updated by updateControlsPosition
+        left: '100px', // Default position, will be updated by updateControlsPosition
+        zIndex: 9999,
+        display: isVisible ? 'block' : 'none',
+        visibility: isVisible ? 'visible' : 'hidden',
+        opacity: isVisible ? '1' : '0',
+        pointerEvents: isVisible ? 'all' : 'none'
       }}
-    ><div className="flex items-center gap-2 text-sm">
-        <span className="text-gray-600 dark:text-gray-300">
-          {Math.round(selectedImage.offsetWidth)} × {Math.round(selectedImage.offsetHeight)}px
-        </span>
-        
-        {hasChanges && (
-          <span className="text-orange-500 text-xs font-medium">
-            ● Unsaved changes
-          </span>
-        )}        <div className="flex gap-1">
-          <button
-            onMouseDown={(e) => {
+    >
+      <div className="flex flex-col gap-2 text-sm">
+        {/* Dimensions display - more prominent with better styling */}        
+        <div className="dimensions-display">
+          <span>{displayWidth} × {displayHeight}</span>
+          {hasChanges ? (
+            <span className="text-orange-500 text-xs font-medium ml-2">
+              ● Unsaved
+            </span>
+          ) : null}
+        </div>
+          
+        {/* Resize controls */}
+        <div className="flex gap-1 flex-wrap justify-between">          <button
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Decrease width clicked');
-              handleResize('width', -10);
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              if (selectedImage) handleResize('width', -10);
             }}
             className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
             title="Decrease width"
@@ -353,12 +886,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             W-
           </button>
-          <button
-            onMouseDown={(e) => {
+              <button              
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Increase width clicked');
-              handleResize('width', 10);
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              if (selectedImage) handleResize('width', 10);
             }}
             className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
             title="Increase width"
@@ -366,12 +900,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             W+
           </button>
-          <button
-            onMouseDown={(e) => {
+            <button            
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Decrease height clicked');
-              handleResize('height', -10);
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              if (selectedImage) handleResize('height', -10);
             }}
             className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
             title="Decrease height"
@@ -379,25 +914,29 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             H-
           </button>
-          <button
-            onMouseDown={(e) => {
+            <button            
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Increase height clicked');
-              handleResize('height', 10);
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              if (selectedImage) handleResize('height', 10);
             }}
             className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
             title="Increase height"
             type="button"
           >
             H+
-          </button>
-          <button
-            onMouseDown={(e) => {
+          </button>            <button            
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Reset clicked');
-              resetSize();
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              if (selectedImage) resetSize();
+              setTimeout(() => {
+                document.body.classList.remove('resizing-active');
+              }, 150);
             }}
             className="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
             title="Reset size"
@@ -405,39 +944,37 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             Reset
           </button>
-          
-          {/* Save button - always visible but highlighted when there are changes */}      <button
-            onMouseDown={(e) => {
+        </div>
+        
+        {/* Save button row - separated for emphasis */}
+        <div className="flex justify-end mt-2">          <button            
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              
               try {
-                saveChanges();
+                if (hasChanges && selectedImage) {
+                  // Save the current dimensions from state to ensure correct saving
+                  saveChanges();
+                }
               } catch (error) {
                 console.error('Failed to save image changes:', error);
-                // Fallback direct save approach
-                if (selectedImage) {
-                  // Get dimensions
-                  const width = Math.round(selectedImage.offsetWidth);
-                  const height = Math.round(selectedImage.offsetHeight);
-                  
-                  // Apply attributes directly
-                  selectedImage.setAttribute('width', width.toString());
-                  selectedImage.setAttribute('height', height.toString());
-                  selectedImage.style.width = `${width}px`;
-                  selectedImage.style.height = `${height}px`;
-                  
-                  console.log('Applied fallback save with dimensions:', width, height);
-                  setHasChanges(false);
-                }
               }
+              
+              setTimeout(() => {
+                document.body.classList.remove('resizing-active');
+              }, 300);
             }}
-            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
               hasChanges 
-                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md' 
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
                 : 'bg-gray-300 text-gray-600 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300'
             }`}
             title={hasChanges ? "Save changes" : "No changes to save"}
             type="button"
+            disabled={!hasChanges}
           >
             Save
           </button>
