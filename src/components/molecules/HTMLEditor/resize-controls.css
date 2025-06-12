@@ -1,6 +1,6 @@
 /* Custom styles for resize controls */
 .resize-controls {
-  position: fixed !important;
+  /* position: fixed !important; */
   z-index: 9999 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   border-radius: 8px !important;

@@ -244,18 +244,18 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
     'list', 'bullet', 'indent',
     'link', 'image', 'resizable-image', 'video'
   ], []);
-
   return (
-    <div className="w-full">
+    <div className="w-full relative"> {/* Added relative positioning to the parent container */}
       {/* Enhanced container with vertical resize capability */}
       <div 
         ref={editorContainerRef}
-        className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 relative"
+        className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800"
         style={{ 
           resize: 'vertical', 
           overflow: 'hidden',
           minHeight: '300px',
-          maxHeight: '800px'
+          maxHeight: '800px',
+          position: 'relative' /* Ensure relative positioning for absolute children */
         }}
       >
         <ReactQuill
@@ -274,7 +274,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
             flexDirection: 'column'
           }}        />      </div>
 
-      {/* Simple Image Resize Component */}
+      {/* Simple Image Resize Component - inside the relative container */}
       <SimpleImageResize quillRef={quillRef} />
 
       {/* Image picker dialog with proper z-index */}
