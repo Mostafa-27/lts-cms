@@ -1,0 +1,48 @@
+// Changes to implement in SimpleImageResize.tsx:
+
+1. Make sure the Save function closes the resize controller:
+- In the saveChanges function, around line 1006, add the closeResizeController call:
+
+setTimeout(() => {
+  // Get a fresh reference to the image if needed
+  let imageToUpdate = currentSelectedImage;
+  
+  if (!imageToUpdate || !isImageValid(imageToUpdate)) {
+    // Try to find the image by src
+    if (quillRef.current && savedImgSrc) {
+      const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${savedImgSrc}"]`);
+      if (images && images.length > 0) {
+        imageToUpdate = images[0] as HTMLImageElement;
+        // Update our reference if it's valid
+        if (isImageValid(imageToUpdate)) {
+          // Simply update the state with the new image
+          setSelectedImage(imageToUpdate);
+        }
+      }
+    }
+  }
+  
+  // Reset outline if we have a valid image reference
+  if (imageToUpdate && isImageValid(imageToUpdate)) {
+    safelyApplyStyles(imageToUpdate, {
+      'outline': originalOutline || ''
+    });
+    
+    // Close the resize controller after saving
+    closeResizeController(true);
+  }
+}, 2000);
+
+2. Make sure the dependency arrays include closeResizeController:
+- For resetSize function: 
+[selectedImage, updateControlsPosition, updatePreviewOverlay, closeResizeController]
+
+- For saveChanges function:
+[quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay, closeResizeController]
+
+3. Make sure error handling in saveChanges also closes the controller:
+} catch (fallbackError) {
+  console.error('Even fallback save failed:', fallbackError);
+  // Ensure we close the controller even on failure
+  closeResizeController(true);
+}

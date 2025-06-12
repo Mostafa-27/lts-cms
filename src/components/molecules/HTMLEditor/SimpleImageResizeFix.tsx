@@ -78,94 +78,60 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   // Refs
   const controlsRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  // Ref to track if we're updating the image to prevent multiple onChange triggers
-  const isUpdatingRef = useRef(false);
-  const changesPendingRef = useRef(false);
-  
-  // Helper function to batch update state to avoid multiple re-renders
-  const batchStateUpdate = useCallback((updates: {
-    selectedImage?: HTMLImageElement | null,
-    dimensions?: { width: number, height: number },
-    previewDimensions?: { width: number, height: number },
-    hasChanges?: boolean,
-    showControls?: boolean,
-    showPreview?: boolean
-  }) => {
-    // Use React 18's automatic batching
-    Object.entries(updates).forEach(([key, value]) => {
-      switch (key) {
-        case 'selectedImage':
-          setSelectedImage(value as HTMLImageElement | null);
-          break;
-        case 'dimensions':
-          setDimensions(value as { width: number, height: number });
-          break;
-        case 'previewDimensions':
-          setPreviewDimensions(value as { width: number, height: number });
-          break;
-        case 'hasChanges':
-          setHasChanges(value as boolean);
-          break;
-        case 'showControls':
-          setShowControls(value as boolean);
-          break;
-        case 'showPreview':
-          setShowPreview(value as boolean);
-          break;
-      }
-    });
-  }, []);
   
   // Helper function to calculate position for controls - returns position object instead of manipulating DOM
-  const calculateControlsPosition = useMemo(() => 
-    (imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
-      // Default position
-      let position = { top: 100, left: 100 };
-      
-      if (!imageElement || !document.body.contains(imageElement)) {
-        return position;
-      }
-      
-      try {
-        const rect = imageElement.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
-        
-        // Position above the image by default with a safe margin
-        let top = Math.max(10, rect.top - controlsHeight - 15);
-        
-        // If there's not enough space above, position below with offset
-        if (top < 10) {
-          top = Math.min(viewportHeight - controlsHeight - 10, rect.bottom + 15);
-        }
-        
-        // Ensure controls are always within viewport
-        if (top + controlsHeight > viewportHeight - 10) {
-          top = Math.max(10, viewportHeight - controlsHeight - 20);
-        }
-        
-        // Center horizontally relative to the image
-        let left = rect.left + (rect.width / 2) - (controlsWidth / 2);
-        
-        // Keep within viewport bounds
-        if (left + controlsWidth > viewportWidth - 10) {
-          left = viewportWidth - controlsWidth - 10;
-        }
-        if (left < 10) {
-          left = 10;
-        }
-        
-        position = { 
-          top: Math.round(top),
-          left: Math.round(left)
-        };
-      } catch (error) {
-        console.error('Error calculating control position:', error);
-      }
-      
+  const calculateControlsPosition = useCallback((imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
+    // Default position
+    let position = { top: 100, left: 100 };
+    
+    if (!imageElement || !document.body.contains(imageElement)) {
       return position;
-    }, []
-  );
+    }
+    
+    try {
+      const rect = imageElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      console.log('Control dimensions:', { height: controlsHeight, width: controlsWidth });
+      console.log('Image rect:', rect);
+      
+      // Position above the image by default with a safe margin
+      let top = Math.max(10, rect.top - controlsHeight - 15);
+      
+      // If there's not enough space above, position below with offset
+      if (top < 10) {
+        top = Math.min(viewportHeight - controlsHeight - 10, rect.bottom + 15);
+      }
+      
+      // Ensure controls are always within viewport
+      if (top + controlsHeight > viewportHeight - 10) {
+        top = Math.max(10, viewportHeight - controlsHeight - 20);
+      }
+      
+      // Center horizontally relative to the image
+      let left = rect.left + (rect.width / 2) - (controlsWidth / 2);
+      
+      // Keep within viewport bounds
+      if (left + controlsWidth > viewportWidth - 10) {
+        left = viewportWidth - controlsWidth - 10;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      
+      position = { 
+        top: Math.round(top),
+        left: Math.round(left)
+      };
+      
+      console.log('Calculated controls position:', position);
+    } catch (error) {
+      console.error('Error calculating control position:', error);
+    }
+    
+    return position;
+  }, []);
   // Function to safely update the position of the controls panel
   const updateControlsPosition = useCallback((controlsElement: HTMLDivElement, imageElement: HTMLImageElement | null) => {
     if (!controlsElement || !imageElement || !document.body.contains(imageElement)) {
@@ -248,8 +214,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       console.error('Error updating preview overlay:', error);
     }
   }, []);
-  
-  // Clear the preview overlay - optimize with memoized function
+  // Clear the preview overlay
   const clearPreviewOverlay = useCallback(() => {
     try {
       // Look for preview overlay in the editor container first, then fall back to document
@@ -257,15 +222,11 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       previewOverlays.forEach(overlay => {
         overlay.remove();
       });
-      
-      // Only update state if it's actually changing
-      if (showPreview) {
-        setShowPreview(false);
-      }
+      setShowPreview(false);
     } catch (error) {
       console.error('Error clearing preview overlay:', error);
     }
-  }, [showPreview]);
+  }, []);
   
   // Utility function to close the resize controller
   const closeResizeController = useCallback((keepSelectedImage: boolean = false) => {
@@ -283,16 +244,16 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     // Clear any preview overlay
     clearPreviewOverlay();
     
-    // Use batch updates to avoid multiple renders
-    batchStateUpdate({
-      showControls: false,
-      hasChanges: false,
-      showPreview: false,
-      // Conditionally update selectedImage
-      ...(keepSelectedImage ? {} : { selectedImage: null })
-    });
+    // Reset state
+    setShowControls(false);
+    setHasChanges(false);
+    setShowPreview(false);
     
-  }, [clearPreviewOverlay, batchStateUpdate]);
+    // Optionally clear selected image reference
+    if (!keepSelectedImage) {
+      setSelectedImage(null);
+    }
+  }, [clearPreviewOverlay]);
     // Update controls position whenever selectedImage or showControls change
   // Use useLayoutEffect to handle DOM measurements and updates before painting
   useLayoutEffect(() => {
@@ -376,16 +337,20 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       safelyApplyStyles(imgElement, { 'outline': '2px solid #007bff' });
       imgElement.classList.add('selected-for-resize');
       
-      // Use our batch update function to avoid multiple re-renders
-      batchStateUpdate({
-        selectedImage: imgElement,
-        dimensions: { width, height },
-        previewDimensions: { width, height },
-        hasChanges: false,
-        showControls: true
-      });
+      // Batch state updates in a single function to avoid multiple re-renders
+      // React will batch these updates together in one render cycle
+      const updateState = () => {
+        setSelectedImage(imgElement);
+        setDimensions({ width, height });
+        setPreviewDimensions({ width, height });
+        setHasChanges(false);
+        setShowControls(true);
+      };
+      
+      // Execute the batched state updates
+      updateState();
     }
-  }, [quillRef, clearPreviewOverlay, batchStateUpdate]);
+  }, [quillRef, clearPreviewOverlay]);
   // Outside click handler - improved to better detect outside clicks
   const handleClickOutside = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
@@ -442,15 +407,15 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       
       // Ensure resizing-active class is removed from body
       document.body.classList.remove('resizing-active');
-        // Finally update all state properties at once to prevent multiple renders
-      batchStateUpdate({
-        selectedImage: null,
-        showControls: false,
-        hasChanges: false,
-        showPreview: false,
-        previewDimensions: { width: 0, height: 0 }
-      });
-    }
+      
+      // Finally update the state
+      setSelectedImage(null);
+      setShowControls(false);
+      setHasChanges(false);
+      setShowPreview(false);
+      
+      // Reset preview dimensions
+      setPreviewDimensions({ width: 0, height: 0 });    }
   }, [quillRef, clearPreviewOverlay, hasChanges, selectedImage]);
 
   // Window resize handler
@@ -955,8 +920,9 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       }, 10);
         // We'll use a ref to track the onChange triggering to prevent multiple calls
       const isChangingRef = useRef(false);
-        // Use a debounced trigger for onChange to prevent multiple rapid calls
-      const debouncedTriggerOnChange = useMemo(() => 
+      
+      // Use a debounced trigger for onChange to prevent multiple rapid calls
+      const debouncedTriggerOnChange = useCallback(
         debounce(() => {
           if (!quillRef.current || isChangingRef.current) return;
           
@@ -980,8 +946,9 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             console.error('Error in final onChange trigger:', error);
             isChangingRef.current = false;
           }
-        }, 250)
-      , [quillRef]);
+        }, 250),
+        []
+      );
       
       // Apply a single update to all images then trigger onChange once
       setTimeout(() => {
@@ -1088,13 +1055,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       } catch (fallbackError) {
         console.error('Even fallback save failed:', fallbackError);
       }
-    }      // Apply all state updates at once to prevent multiple re-renders
+    }
+      // Apply all state updates at once to prevent multiple re-renders
     if (shouldUpdateState) {
-      // Use our batched state update utility to prevent multiple re-renders
-      batchStateUpdate({
-        hasChanges: false,
-        showPreview: false
-      });
+      // Only update the selected image if we have a valid reference to it
+      // This prevents the currentSelectedImage scope issue
+      setHasChanges(false);
+      setShowPreview(false);
     }
   }, [quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay]);
     // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
@@ -1251,7 +1218,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
               setTimeout(() => {
                 closeResizeController(true); // Keep selected image reference
               }, 100);
-            }}            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
+            }}
+            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
               hasChanges 
                 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
                 : 'bg-gray-300 text-gray-600 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300'
