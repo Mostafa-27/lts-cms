@@ -8,6 +8,7 @@ import {
   safelyGetImageDimensions,
   persistImageSize
 } from './image-safety';
+import './image-resize-handles.css';
 
 // Debounce utility for preventing multiple calls 
 const debounce = (func: Function, wait: number) => {
@@ -75,97 +76,70 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   const [previewDimensions, setPreviewDimensions] = useState({ width: 0, height: 0 });
   const [showPreview, setShowPreview] = useState(false);
   
+  // New state for mouse-based resizing
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [dragStartDimensions, setDragStartDimensions] = useState({ width: 0, height: 0 });
+  const [currentHandlePosition, setCurrentHandlePosition] = useState<string | null>(null);
+  
   // Refs
   const controlsRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-  // Ref to track if we're updating the image to prevent multiple onChange triggers
-  const isUpdatingRef = useRef(false);
-  const changesPendingRef = useRef(false);
-  
-  // Helper function to batch update state to avoid multiple re-renders
-  const batchStateUpdate = useCallback((updates: {
-    selectedImage?: HTMLImageElement | null,
-    dimensions?: { width: number, height: number },
-    previewDimensions?: { width: number, height: number },
-    hasChanges?: boolean,
-    showControls?: boolean,
-    showPreview?: boolean
-  }) => {
-    // Use React 18's automatic batching
-    Object.entries(updates).forEach(([key, value]) => {
-      switch (key) {
-        case 'selectedImage':
-          setSelectedImage(value as HTMLImageElement | null);
-          break;
-        case 'dimensions':
-          setDimensions(value as { width: number, height: number });
-          break;
-        case 'previewDimensions':
-          setPreviewDimensions(value as { width: number, height: number });
-          break;
-        case 'hasChanges':
-          setHasChanges(value as boolean);
-          break;
-        case 'showControls':
-          setShowControls(value as boolean);
-          break;
-        case 'showPreview':
-          setShowPreview(value as boolean);
-          break;
-      }
-    });
-  }, []);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   
   // Helper function to calculate position for controls - returns position object instead of manipulating DOM
-  const calculateControlsPosition = useMemo(() => 
-    (imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
-      // Default position
-      let position = { top: 100, left: 100 };
-      
-      if (!imageElement || !document.body.contains(imageElement)) {
-        return position;
-      }
-      
-      try {
-        const rect = imageElement.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
-        
-        // Position above the image by default with a safe margin
-        let top = Math.max(10, rect.top - controlsHeight - 15);
-        
-        // If there's not enough space above, position below with offset
-        if (top < 10) {
-          top = Math.min(viewportHeight - controlsHeight - 10, rect.bottom + 15);
-        }
-        
-        // Ensure controls are always within viewport
-        if (top + controlsHeight > viewportHeight - 10) {
-          top = Math.max(10, viewportHeight - controlsHeight - 20);
-        }
-        
-        // Center horizontally relative to the image
-        let left = rect.left + (rect.width / 2) - (controlsWidth / 2);
-        
-        // Keep within viewport bounds
-        if (left + controlsWidth > viewportWidth - 10) {
-          left = viewportWidth - controlsWidth - 10;
-        }
-        if (left < 10) {
-          left = 10;
-        }
-        
-        position = { 
-          top: Math.round(top),
-          left: Math.round(left)
-        };
-      } catch (error) {
-        console.error('Error calculating control position:', error);
-      }
-      
+  const calculateControlsPosition = useCallback((imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
+    // Default position
+    let position = { top: 100, left: 100 };
+    
+    if (!imageElement || !document.body.contains(imageElement)) {
       return position;
-    }, []
-  );
+    }
+    
+    try {
+      const rect = imageElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      console.log('Control dimensions:', { height: controlsHeight, width: controlsWidth });
+      console.log('Image rect:', rect);
+      
+      // Position above the image by default with a safe margin
+      let top = Math.max(10, rect.top - controlsHeight - 15);
+      
+      // If there's not enough space above, position below with offset
+      if (top < 10) {
+        top = Math.min(viewportHeight - controlsHeight - 10, rect.bottom + 15);
+      }
+      
+      // Ensure controls are always within viewport
+      if (top + controlsHeight > viewportHeight - 10) {
+        top = Math.max(10, viewportHeight - controlsHeight - 20);
+      }
+      
+      // Center horizontally relative to the image
+      let left = rect.left + (rect.width / 2) - (controlsWidth / 2);
+      
+      // Keep within viewport bounds
+      if (left + controlsWidth > viewportWidth - 10) {
+        left = viewportWidth - controlsWidth - 10;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      
+      position = { 
+        top: Math.round(top),
+        left: Math.round(left)
+      };
+      
+      console.log('Calculated controls position:', position);
+    } catch (error) {
+      console.error('Error calculating control position:', error);
+    }
+    
+    return position;
+  }, []);
   // Function to safely update the position of the controls panel
   const updateControlsPosition = useCallback((controlsElement: HTMLDivElement, imageElement: HTMLImageElement | null) => {
     if (!controlsElement || !imageElement || !document.body.contains(imageElement)) {
@@ -248,8 +222,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       console.error('Error updating preview overlay:', error);
     }
   }, []);
-  
-  // Clear the preview overlay - optimize with memoized function
+  // Clear the preview overlay
   const clearPreviewOverlay = useCallback(() => {
     try {
       // Look for preview overlay in the editor container first, then fall back to document
@@ -257,17 +230,12 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       previewOverlays.forEach(overlay => {
         overlay.remove();
       });
-      
-      // Only update state if it's actually changing
-      if (showPreview) {
-        setShowPreview(false);
-      }
+      setShowPreview(false);
     } catch (error) {
       console.error('Error clearing preview overlay:', error);
     }
-  }, [showPreview]);
-  
-  // Utility function to close the resize controller
+  }, []);
+    // Utility function to close the resize controller
   const closeResizeController = useCallback((keepSelectedImage: boolean = false) => {
     // Remove active classes from body
     document.body.classList.remove('resizing-active');
@@ -283,27 +251,30 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     // Clear any preview overlay
     clearPreviewOverlay();
     
-    // Use batch updates to avoid multiple renders
-    batchStateUpdate({
-      showControls: false,
-      hasChanges: false,
-      showPreview: false,
-      // Conditionally update selectedImage
-      ...(keepSelectedImage ? {} : { selectedImage: null })
+    // Clear resize handles
+    document.querySelectorAll('.image-resize-handle').forEach(handle => {
+      handle.remove();
     });
     
-  }, [clearPreviewOverlay, batchStateUpdate]);
-    // Update controls position whenever selectedImage or showControls change
-  // Use useLayoutEffect to handle DOM measurements and updates before painting
-  useLayoutEffect(() => {
-    if (controlsRef.current && selectedImage && showControls) {
-      if (controlsRef.current && selectedImage && document.body.contains(selectedImage)) {
-        updateControlsPosition(controlsRef.current, selectedImage);
-      }
+    // Remove resize wrapper
+    const wrapper = document.querySelector('.image-resize-wrapper');
+    if (wrapper) {
+      wrapper.remove();
     }
-  }, [selectedImage, showControls, updateControlsPosition]);
+    
+    // Reset state
+    setShowControls(false);
+    setHasChanges(false);
+    setShowPreview(false);
+    setIsDragging(false);
+    setCurrentHandlePosition(null);
+    
+    // Optionally clear selected image reference
+    if (!keepSelectedImage) {
+      setSelectedImage(null);
+    }  }, [clearPreviewOverlay]);
 
-  // Clean up any DOM elements on unmount
+  // Update controls position effect moved below after renderResizeHandles is defined// Clean up any DOM elements on unmount
   useEffect(() => {
     return () => {
       // Clean up any lingering UI state
@@ -329,6 +300,28 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         // Ignore cleanup errors
       }
       
+      // Clean up resize handles
+      try {
+        document.querySelectorAll('.image-resize-handle').forEach(handle => {
+          handle.remove();
+        });
+        
+        const wrapper = document.querySelector('.image-resize-wrapper');
+        if (wrapper) {
+          wrapper.remove();
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      // Clean up any event listeners for resize operations
+      try {
+        document.removeEventListener('mousemove', handleResizeDragMove);
+        document.removeEventListener('mouseup', handleResizeDragEnd);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
       // Make sure we reset component state to avoid lingering references
       setSelectedImage(null);
       setShowControls(false);
@@ -340,8 +333,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         controlsRef.current.style.visibility = 'hidden';
       }
     };
-  }, []);
-  // Image click handler - with batched state updates to prevent multiple re-renders
+  }, []);  // Image click handler - with batched state updates to prevent multiple re-renders
   const handleImageClick = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'IMG') {
@@ -353,6 +345,20 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       
       // Clear any previous preview first
       clearPreviewOverlay();
+      
+      // Clean up any existing resize handles
+      document.querySelectorAll('.image-resize-handle').forEach(handle => {
+        handle.remove();
+      });
+      
+      const wrapper = document.querySelector('.image-resize-wrapper');
+      if (wrapper) {
+        wrapper.remove();
+      }
+      
+      // Reset drag state
+      setIsDragging(false);
+      setCurrentHandlePosition(null);
       
       // Update dimensions using our safe utility
       const { width, height } = safelyGetImageDimensions(imgElement);
@@ -376,16 +382,24 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       safelyApplyStyles(imgElement, { 'outline': '2px solid #007bff' });
       imgElement.classList.add('selected-for-resize');
       
-      // Use our batch update function to avoid multiple re-renders
-      batchStateUpdate({
-        selectedImage: imgElement,
-        dimensions: { width, height },
-        previewDimensions: { width, height },
-        hasChanges: false,
-        showControls: true
-      });
+      // Batch state updates in a single function to avoid multiple re-renders
+      // React will batch these updates together in one render cycle
+      const updateState = () => {
+        setSelectedImage(imgElement);
+        setDimensions({ width, height });
+        setPreviewDimensions({ width, height });
+        setHasChanges(false);
+        setShowControls(true);
+      };
+        // Execute the batched state updates
+      updateState();
+      
+      // Set a small timeout to ensure the state updates have been applied before rendering handles
+      setTimeout(() => {
+        renderResizeHandles();
+      }, 0);
     }
-  }, [quillRef, clearPreviewOverlay, batchStateUpdate]);
+  }, [quillRef, clearPreviewOverlay]);
   // Outside click handler - improved to better detect outside clicks
   const handleClickOutside = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
@@ -406,10 +420,10 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     // Check if we clicked on an image
     const clickedOnImage = target.tagName === 'IMG' || target.closest('img') !== null;
-    
-    // Check if we clicked on editor buttons
+      // Check if we clicked on editor buttons
     const clickedOnEditorButton = target.closest('.ql-editor button') !== null;
-      // If click is outside of all relevant elements, close the panel
+    
+    // If click is outside of all relevant elements, close the panel
     if (!clickedOnControls && !clickedOnImage && !clickedOnEditorButton) {
       console.log('Outside click detected, closing panel');
       
@@ -432,6 +446,17 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       // Clear any preview overlay
       clearPreviewOverlay();
       
+      // Clear resize handles
+      document.querySelectorAll('.image-resize-handle').forEach(handle => {
+        handle.remove();
+      });
+      
+      // Remove resize wrapper
+      const wrapper = document.querySelector('.image-resize-wrapper');
+      if (wrapper) {
+        wrapper.remove();
+      }
+      
       // Then hide controls and reset state to prevent race conditions
       if (controlsRef.current) {
         controlsRef.current.classList.remove('active');
@@ -442,15 +467,17 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       
       // Ensure resizing-active class is removed from body
       document.body.classList.remove('resizing-active');
-        // Finally update all state properties at once to prevent multiple renders
-      batchStateUpdate({
-        selectedImage: null,
-        showControls: false,
-        hasChanges: false,
-        showPreview: false,
-        previewDimensions: { width: 0, height: 0 }
-      });
-    }
+      
+      // Finally update the state
+      setSelectedImage(null);
+      setShowControls(false);
+      setHasChanges(false);
+      setShowPreview(false);
+      setIsDragging(false);
+      setCurrentHandlePosition(null);
+      
+      // Reset preview dimensions
+      setPreviewDimensions({ width: 0, height: 0 });    }
   }, [quillRef, clearPreviewOverlay, hasChanges, selectedImage]);
 
   // Window resize handler
@@ -955,8 +982,9 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       }, 10);
         // We'll use a ref to track the onChange triggering to prevent multiple calls
       const isChangingRef = useRef(false);
-        // Use a debounced trigger for onChange to prevent multiple rapid calls
-      const debouncedTriggerOnChange = useMemo(() => 
+      
+      // Use a debounced trigger for onChange to prevent multiple rapid calls
+      const debouncedTriggerOnChange = useCallback(
         debounce(() => {
           if (!quillRef.current || isChangingRef.current) return;
           
@@ -980,8 +1008,9 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             console.error('Error in final onChange trigger:', error);
             isChangingRef.current = false;
           }
-        }, 250)
-      , [quillRef]);
+        }, 250),
+        []
+      );
       
       // Apply a single update to all images then trigger onChange once
       setTimeout(() => {
@@ -1009,9 +1038,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       setDimensions({
         width: currentWidth,
         height: currentHeight
-      });
-      
-      // Clear the preview overlay      clearPreviewOverlay();
+      });      // Clear the preview overlay
+      clearPreviewOverlay();
       
       // Batch state updates to prevent multiple re-renders
       // We'll apply these at the end
@@ -1088,13 +1116,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       } catch (fallbackError) {
         console.error('Even fallback save failed:', fallbackError);
       }
-    }      // Apply all state updates at once to prevent multiple re-renders
+    }
+      // Apply all state updates at once to prevent multiple re-renders
     if (shouldUpdateState) {
-      // Use our batched state update utility to prevent multiple re-renders
-      batchStateUpdate({
-        hasChanges: false,
-        showPreview: false
-      });
+      // Only update the selected image if we have a valid reference to it
+      // This prevents the currentSelectedImage scope issue
+      setHasChanges(false);
+      setShowPreview(false);
     }
   }, [quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay]);
     // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
@@ -1110,8 +1138,229 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   // Get dimensions to display
   const displayWidth = displayDimensions.width;
   const displayHeight = displayDimensions.height;
+      // Define the resize handle positions
+  const resizeHandlePositions = useMemo(() => [
+    'top-left', 'top', 'top-right',
+    'right',             'left', 
+    'bottom-left', 'bottom', 'bottom-right'
+  ], []);
+  // Function to handle the start of a resize drag
+  const handleResizeDragStart = useCallback((e: MouseEvent, handlePosition: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-  // Render resize controls - always render but conditionally show/hide  
+    if (!selectedImage || !isImageValid(selectedImage)) return;
+    
+    console.log('Starting drag for handle:', handlePosition);
+    
+    // Mark as dragging
+    setIsDragging(true);
+    setCurrentHandlePosition(handlePosition);
+    
+    // Mark as resizing active to prevent other events
+    document.body.classList.add('resizing-active');
+    
+    // Save starting position
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    
+    // Save starting dimensions
+    const currentWidth = previewDimensions.width || dimensions.width;
+    const currentHeight = previewDimensions.height || dimensions.height;
+    setDragStartDimensions({ width: currentWidth, height: currentHeight });
+    
+    // Add dragging class to the handle
+    const handle = e.target as HTMLElement;
+    handle.classList.add('dragging');
+    
+    console.log('Drag start setup complete');
+  }, [selectedImage, previewDimensions, dimensions]);
+
+  // Function to render resize handles around the selected image
+  const renderResizeHandles = useCallback(() => {
+    if (!selectedImage || !isImageValid(selectedImage)) return;
+    
+    // Remove any existing handles first
+    document.querySelectorAll('.image-resize-handle').forEach(handle => {
+      handle.remove();
+    });
+
+    // Get image position and dimensions
+    const rect = selectedImage.getBoundingClientRect();
+    const editorContainer = selectedImage.closest('.ql-editor')?.parentElement?.parentElement?.parentElement;
+    const editorRect = editorContainer ? editorContainer.getBoundingClientRect() : { top: 0, left: 0 };
+    
+    // Create or get the resize wrapper
+    let wrapper = document.querySelector('.image-resize-wrapper') as HTMLDivElement;
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'image-resize-wrapper';
+      if (editorContainer) {
+        editorContainer.appendChild(wrapper);
+      } else {
+        document.body.appendChild(wrapper);
+      }
+    }
+
+    // Position the wrapper around the image
+    const top = rect.top - (editorContainer ? editorRect.top : 0);
+    const left = rect.left - (editorContainer ? editorRect.left : 0);
+    
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = `${top}px`;
+    wrapper.style.left = `${left}px`;
+    wrapper.style.width = `${rect.width}px`;
+    wrapper.style.height = `${rect.height}px`;
+    wrapper.style.pointerEvents = 'none';
+    wrapper.style.zIndex = '9998';
+
+    // Set the reference
+    wrapperRef.current = wrapper;
+    
+    // Create handles
+    resizeHandlePositions.forEach(position => {
+      const handle = document.createElement('div');
+      handle.className = `image-resize-handle ${position}`;
+      handle.dataset.position = position;
+      handle.style.pointerEvents = 'all'; // Make handles interactive
+      
+      // Add event listeners for resizing
+      handle.addEventListener('mousedown', (e: MouseEvent) => handleResizeDragStart(e, position));
+      
+      wrapper.appendChild(handle);
+    });
+  }, [selectedImage, resizeHandlePositions, handleResizeDragStart]);
+
+  // Handle drag movement during resize
+  const handleResizeDragMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !selectedImage || !currentHandlePosition) return;
+
+    e.preventDefault();
+    
+    const dx = e.clientX - dragStartPos.x;
+    const dy = e.clientY - dragStartPos.y;
+    
+    // Initial width and height
+    const startWidth = dragStartDimensions.width;
+    const startHeight = dragStartDimensions.height;
+    
+    // Calculate aspect ratio
+    const aspectRatio = startHeight / startWidth;
+    
+    // New dimensions
+    let newWidth = startWidth;
+    let newHeight = startHeight;
+    
+    // Calculate new dimensions based on handle position
+    switch (currentHandlePosition) {
+      case 'top-left':
+        newWidth = Math.max(50, startWidth - dx);
+        newHeight = Math.max(30, startHeight - dy);
+        break;
+      case 'top':
+        newHeight = Math.max(30, startHeight - dy);
+        newWidth = newHeight / aspectRatio;
+        break;
+      case 'top-right':
+        newWidth = Math.max(50, startWidth + dx);
+        newHeight = Math.max(30, startHeight - dy);
+        break;
+      case 'right':
+        newWidth = Math.max(50, startWidth + dx);
+        newHeight = newWidth * aspectRatio;
+        break;
+      case 'bottom-right':
+        newWidth = Math.max(50, startWidth + dx);
+        newHeight = Math.max(30, startHeight + dy);
+        break;
+      case 'bottom':
+        newHeight = Math.max(30, startHeight + dy);
+        newWidth = newHeight / aspectRatio;
+        break;
+      case 'bottom-left':
+        newWidth = Math.max(50, startWidth - dx);
+        newHeight = Math.max(30, startHeight + dy);
+        break;
+      case 'left':
+        newWidth = Math.max(50, startWidth - dx);
+        newHeight = newWidth * aspectRatio;
+        break;
+    }
+    
+    // Round dimensions
+    newWidth = Math.round(newWidth);
+    newHeight = Math.round(newHeight);
+    
+    // Update preview dimensions
+    setPreviewDimensions({
+      width: newWidth,
+      height: newHeight
+    });
+    
+    // Show preview overlay
+    updatePreviewOverlay(selectedImage, newWidth, newHeight);
+    setShowPreview(true);
+    
+    // Mark image as having unsaved changes
+    selectedImage.classList.add('has-unsaved-resize');
+    
+    // Mark that we have changes
+    setHasChanges(true);
+    
+    // Update resize handles position
+    if (wrapperRef.current) {
+      wrapperRef.current.style.width = `${newWidth}px`;
+      wrapperRef.current.style.height = `${newHeight}px`;
+      
+      // Update resize handles position by re-rendering them
+      setTimeout(() => {
+        renderResizeHandles();
+      }, 0);
+    }
+  }, [isDragging, selectedImage, currentHandlePosition, dragStartPos, dragStartDimensions, updatePreviewOverlay, renderResizeHandles]);
+
+  // Handle end of resize drag operation
+  const handleResizeDragEnd = useCallback(() => {
+    console.log('Ending drag operation');
+    
+    // Reset dragging state
+    setIsDragging(false);
+    setCurrentHandlePosition(null);
+    
+    // Remove dragging class from all handles
+    document.querySelectorAll('.image-resize-handle.dragging').forEach(handle => {
+      handle.classList.remove('dragging');
+    });
+    
+    // Update controls position with a slight delay
+    setTimeout(() => {
+      if (controlsRef.current && selectedImage) {
+        updateControlsPosition(controlsRef.current, selectedImage);
+      }
+    }, 100);  }, [selectedImage, updateControlsPosition]);
+
+  // Effect to manage mouse event listeners during drag operations
+  useEffect(() => {
+    if (isDragging) {
+      console.log('Adding global mouse event listeners for drag');
+      document.addEventListener('mousemove', handleResizeDragMove);
+      document.addEventListener('mouseup', handleResizeDragEnd);
+      
+      return () => {
+        console.log('Cleaning up global mouse event listeners');
+        document.removeEventListener('mousemove', handleResizeDragMove);
+        document.removeEventListener('mouseup', handleResizeDragEnd);
+      };
+    }
+  }, [isDragging, handleResizeDragMove, handleResizeDragEnd]);
+
+  // Effect to render resize handles when an image is selected
+  useEffect(() => {
+    if (selectedImage && showControls && !isDragging) {
+      renderResizeHandles();
+    }
+  }, [selectedImage, showControls, renderResizeHandles, isDragging]);
+  
+  // Render resize controls - always render but conditionally show/hide
   return (
     <div 
       ref={controlsRef}
@@ -1138,16 +1387,22 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       onClick={(e) => {
         e.stopPropagation(); // Prevent click event from bubbling
       }}
-    >
-      <div className="flex flex-col gap-2 text-sm">
+    >      <div className="flex flex-col gap-2 text-sm">
         {/* Dimensions display - more prominent with better styling */}        
-        <div className="dimensions-display">
-          <span>{displayWidth} × {displayHeight}</span>
-          {hasChanges ? (
+        <div className="dimensions-display p-1 border-b border-gray-200 mb-1">
+          <span className="font-medium">{displayWidth} × {displayHeight}</span>
+          {isDragging ? (
+            <span className="text-blue-500 text-xs font-medium ml-2">
+              ● Resizing
+            </span>
+          ) : hasChanges ? (
             <span className="text-orange-500 text-xs font-medium ml-2">
               ● Unsaved
             </span>
           ) : null}
+          <div className="text-xs text-gray-500 mt-1">
+            Drag resize handles or use buttons below
+          </div>
         </div>
           
         {/* Resize controls */}

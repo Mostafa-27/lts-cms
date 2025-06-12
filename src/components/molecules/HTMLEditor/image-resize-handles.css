@@ -1,0 +1,94 @@
+/* Custom styles for image resize handles */
+.image-resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: #007bff;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  z-index: 10000;
+  cursor: nwse-resize;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Handle positions */
+.image-resize-handle.top-left {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.image-resize-handle.top-right {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.image-resize-handle.bottom-left {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.image-resize-handle.bottom-right {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}
+
+.image-resize-handle.top {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.image-resize-handle.right {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.image-resize-handle.bottom {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.image-resize-handle.left {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* Image wrapper for resize handles */
+.image-resize-wrapper {
+  position: absolute;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* Adjust cursor on image when resize mode is active */
+.ql-editor img.selected-for-resize {
+  cursor: move;
+}
+
+/* Ensure resize wrapper is visible regardless of theme */
+.dark .image-resize-handle {
+  background-color: #3b82f6;
+  border-color: #1e293b;
+}
+
+/* Set z-index higher when dragging */
+.image-resize-handle.dragging {
+  z-index: 10001;
+}
+
+/* Disable text selection during resize */
+body.resizing-active {
+  user-select: none;
+  -webkit-user-select: none;
+}

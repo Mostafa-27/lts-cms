@@ -4,6 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import './quill-dark-theme.css';
 import './image-resize.css'; // Import custom image resize styles
 import './resize-controls.css'; // Import resize controls styles
+import './image-resize-handles.css'; // Import resize handles styles
 import { ImagePickerDialog } from '../imagePickerDialog';
 import SimpleImageResize from './SimpleImageResize';
 import ResizableImageBlot from './ResizableImageBlot';
