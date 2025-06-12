@@ -1042,7 +1042,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             H+
           </button>
-          <button            
+          {/* <button            
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1058,12 +1058,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             type="button"
           >
             Reset
-          </button>
-        </div>
-        
-        {/* Save button row - separated for emphasis */}
-        <div className="flex justify-end mt-2">
-          <button              onClick={(e) => {
+          </button> */} <button              onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               document.body.classList.add('resizing-active');
@@ -1103,6 +1098,49 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             Save
           </button>
         </div>
+        
+        {/* Save button row - separated for emphasis */}
+        {/* <div className="flex justify-end mt-2">
+          <button              onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              
+              try {
+                if (hasChanges && selectedImage) {
+                  // Save the current dimensions from state to ensure correct saving
+                  saveChanges();
+                  
+                  // After saving, immediately allow the panel to be closed
+                  document.body.classList.remove('resizing-active');
+                  if (controlsRef.current) controlsRef.current.classList.remove('active');
+                }
+              } catch (error) {
+                console.error('Failed to save image changes:', error);
+                // Always ensure resizing-active is removed even on error
+                document.body.classList.remove('resizing-active');
+                if (controlsRef.current) controlsRef.current.classList.remove('active');
+              }
+              
+              // Ensure the class is always removed after a short delay
+              setTimeout(() => {
+                document.body.classList.remove('resizing-active');
+                if (controlsRef.current) controlsRef.current.classList.remove('active');
+              }, 100);
+            }}
+            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
+              hasChanges 
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
+                : 'bg-gray-300 text-gray-600 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300'
+            }`}
+            title={hasChanges ? "Save changes" : "No changes to save"}
+            type="button"
+            disabled={!hasChanges}
+          >
+            Save
+          </button>
+        </div> */}
       </div>
     </div>
   );

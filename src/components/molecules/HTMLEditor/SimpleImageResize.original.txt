@@ -119,7 +119,6 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     return position;
   }, []);
-
   // Function to safely update the position of the controls panel
   const updateControlsPosition = useCallback((controlsElement: HTMLDivElement, imageElement: HTMLImageElement | null) => {
     if (!controlsElement || !imageElement || !document.body.contains(imageElement)) {
@@ -127,11 +126,22 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     }
 
     try {
-      const position = calculateControlsPosition(imageElement);
+      // Find the editor container
+      const editorContainer = imageElement.closest('.ql-editor')?.parentElement?.parentElement?.parentElement;
       
-      // Apply position updates via style properties
-      controlsElement.style.top = `${position.top}px`;
-      controlsElement.style.left = `${position.left}px`;
+      if (editorContainer) {
+        // Position at the top right of the editor container
+        controlsElement.style.top = '0';
+        controlsElement.style.right = '0';
+        controlsElement.style.left = 'auto';
+      } else {
+        // Fallback to calculated position if editor container not found
+        const position = calculateControlsPosition(imageElement);
+        controlsElement.style.top = `${position.top}px`;
+        controlsElement.style.left = `${position.left}px`;
+        controlsElement.style.right = 'auto';
+      }
+      
       controlsElement.style.display = 'block';
       controlsElement.style.visibility = 'visible';
       
@@ -141,7 +151,6 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       console.error('Error updating controls position:', error);
     }
   }, [calculateControlsPosition]);
-
   // Helper function to update the preview overlay showing resize results
   const updatePreviewOverlay = useCallback((imageElement: HTMLImageElement, width: number, height: number) => {
     if (!imageElement || !document.body.contains(imageElement)) {
@@ -151,15 +160,26 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     try {
       // Create or get the preview overlay
       let previewOverlay = document.querySelector('.image-resize-preview') as HTMLDivElement;
+      const editorContainer = imageElement.closest('.ql-editor')?.parentElement?.parentElement?.parentElement;
       
       if (!previewOverlay) {
         previewOverlay = document.createElement('div');
         previewOverlay.className = 'image-resize-preview';
-        document.body.appendChild(previewOverlay);
+        // Append to editor container if possible, otherwise fallback to document.body
+        if (editorContainer) {
+          editorContainer.appendChild(previewOverlay);
+        } else {
+          document.body.appendChild(previewOverlay);
+        }
       }
       
       // Position and size the overlay based on the image
       const rect = imageElement.getBoundingClientRect();
+      const editorRect = editorContainer ? editorContainer.getBoundingClientRect() : { top: 0, left: 0 };
+      
+      // Calculate position relative to editor container
+      const top = rect.top - (editorContainer ? editorRect.top : 0);
+      const left = rect.left - (editorContainer ? editorRect.left : 0);
       
       // Set overlay styles
       previewOverlay.style.position = 'absolute';
@@ -167,8 +187,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       previewOverlay.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';  
       previewOverlay.style.pointerEvents = 'none';
       previewOverlay.style.zIndex = '9998';
-      previewOverlay.style.top = `${rect.top}px`;
-      previewOverlay.style.left = `${rect.left}px`;
+      previewOverlay.style.top = `${top}px`;
+      previewOverlay.style.left = `${left}px`;
       previewOverlay.style.width = `${width}px`;
       previewOverlay.style.height = `${height}px`;
       previewOverlay.style.display = 'block';
@@ -181,14 +201,14 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       console.error('Error updating preview overlay:', error);
     }
   }, []);
-  
-  // Clear the preview overlay
+    // Clear the preview overlay
   const clearPreviewOverlay = useCallback(() => {
     try {
-      const previewOverlay = document.querySelector('.image-resize-preview');
-      if (previewOverlay) {
-        previewOverlay.remove();
-      }
+      // Look for preview overlay in the editor container first, then fall back to document
+      const previewOverlays = document.querySelectorAll('.image-resize-preview');
+      previewOverlays.forEach(overlay => {
+        overlay.remove();
+      });
       setShowPreview(false);
     } catch (error) {
       console.error('Error clearing preview overlay:', error);
@@ -300,18 +320,28 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       return;
     }
     
+    // Make sure this is actually a click outside, not a click caught during event bubbling
     // Check if click was on controls or inside controls
-    const clickedOnControls = target.closest('.resize-controls') !== null;
+    const clickedOnControls = controlsRef.current && (
+      controlsRef.current === target || 
+      controlsRef.current.contains(target) || 
+      target.closest('.resize-controls') !== null
+    );
     
     // Check if we clicked on an image
-    const clickedOnImage = target.tagName === 'IMG';
+    const clickedOnImage = target.tagName === 'IMG' || target.closest('img') !== null;
     
     // Check if we clicked on editor buttons
     const clickedOnEditorButton = target.closest('.ql-editor button') !== null;
-    
-    // If click is outside of all relevant elements, close the panel
+      // If click is outside of all relevant elements, close the panel
     if (!clickedOnControls && !clickedOnImage && !clickedOnEditorButton) {
       console.log('Outside click detected, closing panel');
+      
+      // Prevent closing if we have unsaved changes
+      if (hasChanges && selectedImage) {
+        console.log('Panel has unsaved changes, consider showing a confirmation dialog');
+        // Optionally add a confirmation dialog here if needed
+      }
       
       // First remove highlight from images
       if (quillRef.current) {
@@ -319,6 +349,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         editor.querySelectorAll('img').forEach((img: HTMLImageElement) => {
           safelyApplyStyles(img, { 'outline': '' });
           img.classList.remove('selected-for-resize');
+          img.classList.remove('has-unsaved-resize');
         });
       }
       
@@ -330,14 +361,21 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         controlsRef.current.classList.remove('active');
         controlsRef.current.style.display = 'none';
         controlsRef.current.style.visibility = 'hidden';
+        controlsRef.current.style.opacity = '0';
       }
+      
+      // Ensure resizing-active class is removed from body
+      document.body.classList.remove('resizing-active');
       
       // Finally update the state
       setSelectedImage(null);
       setShowControls(false);
       setHasChanges(false);
-    }
-  }, [quillRef, clearPreviewOverlay]);
+      setShowPreview(false);
+      
+      // Reset preview dimensions
+      setPreviewDimensions({ width: 0, height: 0 });    }
+  }, [quillRef, clearPreviewOverlay, hasChanges, selectedImage]);
 
   // Window resize handler
   useEffect(() => {
@@ -366,31 +404,33 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
 
     // Use click event for more reliable interaction
     editor.addEventListener('click', handleImageClick);
-    
-    // Directly attach the click event handler to document with an immediate call
-    // This ensures better compatibility with all browsers and scenarios
+      // Improved handling of document clicks for more reliable outside click detection
     const handleDocumentClick = (e: MouseEvent) => {
-      // Skip handling if we're actively resizing
+      // If the click originated from inside the controls, don't process it as an outside click
+      if (e.target && controlsRef.current && controlsRef.current.contains(e.target as Node)) {
+        return;
+      }
+      
+      // Skip handling if we're actively resizing to avoid accidental panel closures
       if (document.body.classList.contains('resizing-active')) {
         return;
       }
       
       // We need a small delay to allow other click handlers to complete first
-      requestAnimationFrame(() => {
+      // This ensures we have the most up-to-date DOM state
+      setTimeout(() => {
         handleClickOutside(e);
-      });
+      }, 10);
     };
     
-    // Use mousedown for more reliable capture of clicks outside the panel
+    // Use mousedown with capture phase for earlier interception of clicks
     document.addEventListener('mousedown', handleDocumentClick, { capture: true });
     
-    // Also add a standard click handler as a fallback
-    document.addEventListener('click', handleDocumentClick);
-
-    return () => {
+    // Also add a standard click handler as a backup with capture
+    document.addEventListener('click', handleDocumentClick, { capture: true });    return () => {
       editor.removeEventListener('click', handleImageClick);
       document.removeEventListener('mousedown', handleDocumentClick, { capture: true });
-      document.removeEventListener('click', handleDocumentClick);
+      document.removeEventListener('click', handleDocumentClick, { capture: true });
     };
   }, [quillRef, handleImageClick, handleClickOutside]);
   
@@ -899,22 +939,21 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       }
     }
   }, [quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay]);
-  
-  // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
+    // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
   const isVisible = Boolean(showControls && selectedImage);
-  
-  // Get dimensions to display
+    // Get dimensions to display
   const displayWidth = previewDimensions.width || dimensions.width || 0;
   const displayHeight = previewDimensions.height || dimensions.height || 0;
     
-  // Render resize controls - always render but conditionally show/hide  return (
+  // Render resize controls - always render but conditionally show/hide  
+  return (
     <div 
       ref={controlsRef}
       className={`resize-controls ${document.body.classList.contains('resizing-active') ? 'active' : ''}`}
       style={{
-        position: 'fixed',
-        top: '100px', // Default position, will be updated by updateControlsPosition
-        left: '100px', // Default position, will be updated by updateControlsPosition
+        position: 'absolute',
+        top: '0', // Position at the top
+        right: '0', // Position at the right
         zIndex: 9999,
         display: isVisible ? 'block' : 'none',
         visibility: isVisible ? 'visible' : 'hidden',
@@ -926,7 +965,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         color: '#333'
       }}
-      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from triggering outside click
+      onMouseDown={(e) => {
+        e.stopPropagation(); // Prevent mousedown from triggering outside click
+        e.preventDefault();  // Prevent default browser behavior
+      }}
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent click event from bubbling
+      }}
     >
       <div className="flex flex-col gap-2 text-sm">
         {/* Dimensions display - more prominent with better styling */}        
@@ -997,7 +1042,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           >
             H+
           </button>
-          <button            
+          {/* <button            
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1013,12 +1058,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             type="button"
           >
             Reset
-          </button>
-        </div>
-        
-        {/* Save button row - separated for emphasis */}
-        <div className="flex justify-end mt-2">
-          <button              onClick={(e) => {
+          </button> */} <button              onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               document.body.classList.add('resizing-active');
@@ -1058,6 +1098,49 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             Save
           </button>
         </div>
+        
+        {/* Save button row - separated for emphasis */}
+        {/* <div className="flex justify-end mt-2">
+          <button              onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              document.body.classList.add('resizing-active');
+              if (controlsRef.current) controlsRef.current.classList.add('active');
+              
+              try {
+                if (hasChanges && selectedImage) {
+                  // Save the current dimensions from state to ensure correct saving
+                  saveChanges();
+                  
+                  // After saving, immediately allow the panel to be closed
+                  document.body.classList.remove('resizing-active');
+                  if (controlsRef.current) controlsRef.current.classList.remove('active');
+                }
+              } catch (error) {
+                console.error('Failed to save image changes:', error);
+                // Always ensure resizing-active is removed even on error
+                document.body.classList.remove('resizing-active');
+                if (controlsRef.current) controlsRef.current.classList.remove('active');
+              }
+              
+              // Ensure the class is always removed after a short delay
+              setTimeout(() => {
+                document.body.classList.remove('resizing-active');
+                if (controlsRef.current) controlsRef.current.classList.remove('active');
+              }, 100);
+            }}
+            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
+              hasChanges 
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
+                : 'bg-gray-300 text-gray-600 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300'
+            }`}
+            title={hasChanges ? "Save changes" : "No changes to save"}
+            type="button"
+            disabled={!hasChanges}
+          >
+            Save
+          </button>
+        </div> */}
       </div>
     </div>
   );
