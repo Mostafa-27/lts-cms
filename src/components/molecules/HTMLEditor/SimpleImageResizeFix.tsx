@@ -8,6 +8,7 @@ import {
   safelyGetImageDimensions,
   persistImageSize
 } from './image-safety';
+import './image-resize-handles.css';
 
 // Debounce utility for preventing multiple calls 
 const debounce = (func: Function, wait: number) => {
@@ -75,9 +76,16 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   const [previewDimensions, setPreviewDimensions] = useState({ width: 0, height: 0 });
   const [showPreview, setShowPreview] = useState(false);
   
+  // New state for mouse-based resizing
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [dragStartDimensions, setDragStartDimensions] = useState({ width: 0, height: 0 });
+  const [currentHandlePosition, setCurrentHandlePosition] = useState<string | null>(null);
+  
   // Refs
   const controlsRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   
   // Helper function to calculate position for controls - returns position object instead of manipulating DOM
   const calculateControlsPosition = useCallback((imageElement: HTMLImageElement | null, controlsHeight = 90, controlsWidth = 320) => {
@@ -227,8 +235,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       console.error('Error clearing preview overlay:', error);
     }
   }, []);
-  
-  // Utility function to close the resize controller
+    // Utility function to close the resize controller
   const closeResizeController = useCallback((keepSelectedImage: boolean = false) => {
     // Remove active classes from body
     document.body.classList.remove('resizing-active');
@@ -244,27 +251,30 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     // Clear any preview overlay
     clearPreviewOverlay();
     
+    // Clear resize handles
+    document.querySelectorAll('.image-resize-handle').forEach(handle => {
+      handle.remove();
+    });
+    
+    // Remove resize wrapper
+    const wrapper = document.querySelector('.image-resize-wrapper');
+    if (wrapper) {
+      wrapper.remove();
+    }
+    
     // Reset state
     setShowControls(false);
     setHasChanges(false);
     setShowPreview(false);
+    setIsDragging(false);
+    setCurrentHandlePosition(null);
     
     // Optionally clear selected image reference
     if (!keepSelectedImage) {
       setSelectedImage(null);
-    }
-  }, [clearPreviewOverlay]);
-    // Update controls position whenever selectedImage or showControls change
-  // Use useLayoutEffect to handle DOM measurements and updates before painting
-  useLayoutEffect(() => {
-    if (controlsRef.current && selectedImage && showControls) {
-      if (controlsRef.current && selectedImage && document.body.contains(selectedImage)) {
-        updateControlsPosition(controlsRef.current, selectedImage);
-      }
-    }
-  }, [selectedImage, showControls, updateControlsPosition]);
+    }  }, [clearPreviewOverlay]);
 
-  // Clean up any DOM elements on unmount
+  // Update controls position effect moved below after renderResizeHandles is defined// Clean up any DOM elements on unmount
   useEffect(() => {
     return () => {
       // Clean up any lingering UI state
@@ -290,6 +300,28 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         // Ignore cleanup errors
       }
       
+      // Clean up resize handles
+      try {
+        document.querySelectorAll('.image-resize-handle').forEach(handle => {
+          handle.remove();
+        });
+        
+        const wrapper = document.querySelector('.image-resize-wrapper');
+        if (wrapper) {
+          wrapper.remove();
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      // Clean up any event listeners for resize operations
+      try {
+        document.removeEventListener('mousemove', handleResizeDragMove);
+        document.removeEventListener('mouseup', handleResizeDragEnd);
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
       // Make sure we reset component state to avoid lingering references
       setSelectedImage(null);
       setShowControls(false);
@@ -301,8 +333,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         controlsRef.current.style.visibility = 'hidden';
       }
     };
-  }, []);
-  // Image click handler - with batched state updates to prevent multiple re-renders
+  }, []);  // Image click handler - with batched state updates to prevent multiple re-renders
   const handleImageClick = useCallback((e: Event) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'IMG') {
@@ -314,6 +345,20 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       
       // Clear any previous preview first
       clearPreviewOverlay();
+      
+      // Clean up any existing resize handles
+      document.querySelectorAll('.image-resize-handle').forEach(handle => {
+        handle.remove();
+      });
+      
+      const wrapper = document.querySelector('.image-resize-wrapper');
+      if (wrapper) {
+        wrapper.remove();
+      }
+      
+      // Reset drag state
+      setIsDragging(false);
+      setCurrentHandlePosition(null);
       
       // Update dimensions using our safe utility
       const { width, height } = safelyGetImageDimensions(imgElement);
@@ -346,9 +391,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         setHasChanges(false);
         setShowControls(true);
       };
-      
-      // Execute the batched state updates
+        // Execute the batched state updates
       updateState();
+      
+      // Set a small timeout to ensure the state updates have been applied before rendering handles
+      setTimeout(() => {
+        renderResizeHandles();
+      }, 0);
     }
   }, [quillRef, clearPreviewOverlay]);
   // Outside click handler - improved to better detect outside clicks
@@ -371,10 +420,10 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     // Check if we clicked on an image
     const clickedOnImage = target.tagName === 'IMG' || target.closest('img') !== null;
-    
-    // Check if we clicked on editor buttons
+      // Check if we clicked on editor buttons
     const clickedOnEditorButton = target.closest('.ql-editor button') !== null;
-      // If click is outside of all relevant elements, close the panel
+    
+    // If click is outside of all relevant elements, close the panel
     if (!clickedOnControls && !clickedOnImage && !clickedOnEditorButton) {
       console.log('Outside click detected, closing panel');
       
@@ -397,6 +446,17 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       // Clear any preview overlay
       clearPreviewOverlay();
       
+      // Clear resize handles
+      document.querySelectorAll('.image-resize-handle').forEach(handle => {
+        handle.remove();
+      });
+      
+      // Remove resize wrapper
+      const wrapper = document.querySelector('.image-resize-wrapper');
+      if (wrapper) {
+        wrapper.remove();
+      }
+      
       // Then hide controls and reset state to prevent race conditions
       if (controlsRef.current) {
         controlsRef.current.classList.remove('active');
@@ -413,6 +473,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       setShowControls(false);
       setHasChanges(false);
       setShowPreview(false);
+      setIsDragging(false);
+      setCurrentHandlePosition(null);
       
       // Reset preview dimensions
       setPreviewDimensions({ width: 0, height: 0 });    }
@@ -592,7 +654,166 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       quill.off('text-change', handleTextChange);
     };
   }, [quillRef, restoreImageDimensions]);
-  // Handler for resizing an image - only updates preview dimensions without modifying the actual image
+  
+  // Handler for saving image changes - applies the preview dimensions to the actual image
+  const saveChanges = useCallback(() => {
+    console.log('Save changes called, hasChanges:', hasChanges);
+    
+    if (!quillRef.current || !hasChanges) {
+      console.log('No changes to save or no quill ref');
+      return;
+    }
+    
+    // Use a local variable to track state changes
+    // This prevents unnecessary re-renders during the save operation
+    let shouldUpdateState = false;
+    
+    if (!selectedImage || !isImageValid(selectedImage)) {
+      console.log('Selected image is no longer valid, attempting to recover');
+      // We'll try to find the image in the editor below
+    }
+    
+    try {
+      const quill = quillRef.current.getEditor();
+      
+      // Use the preview dimensions that we've been tracking
+      const currentWidth = previewDimensions.width || dimensions.width;
+      const currentHeight = previewDimensions.height || dimensions.height;
+      
+      // Make sure we have valid dimensions
+      if (!currentWidth || !currentHeight) {
+        console.warn('Invalid dimensions, aborting save');
+        return;
+      }
+      
+      console.log('Saving dimensions:', currentWidth, currentHeight);
+      
+      // Get image source for identification
+      let imgSrc = '';
+      let currentSelectedImage: HTMLImageElement | null = selectedImage;
+      
+      // If the selected image is no longer valid, try to find it in the editor
+      if (!selectedImage || !isImageValid(selectedImage)) {
+        // We need to find the image in the editor
+        const images = quillRef.current.getEditor().root.querySelectorAll('img.has-unsaved-resize');
+        if (images.length > 0) {
+          currentSelectedImage = images[0] as HTMLImageElement;
+          shouldUpdateState = true; // Mark for state update at the end
+          console.log('Recovered image reference');
+        } else {
+          console.warn('Could not find image to save');
+          return;
+        }
+      }
+      
+      // At this point currentSelectedImage should be valid, but let's double-check
+      if (!currentSelectedImage || !isImageValid(currentSelectedImage)) {
+        console.warn('Invalid image reference even after recovery attempt');
+        return;
+      }
+      
+      imgSrc = currentSelectedImage.getAttribute('src') || '';
+      if (!imgSrc) {
+        console.warn('No image source found, aborting save');
+        return;
+      }
+      
+      // Create a function to safely update image attributes & style
+      const updateImageSize = (img: HTMLImageElement) => {
+        if (!isImageValid(img)) return;
+        
+        console.log('Persisting image dimensions:', currentWidth, currentHeight);
+        
+        // Use our dedicated helper to ensure consistent application of size
+        persistImageSize(img, currentWidth, currentHeight);
+        
+        // Force a browser repaint to ensure the changes are applied
+        void img.offsetHeight;
+      };
+      
+      // NOW we update the selected image with the preview dimensions
+      // At this point currentSelectedImage is guaranteed to be non-null because of our checks
+      updateImageSize(currentSelectedImage as HTMLImageElement);
+      safelyApplyStyles(currentSelectedImage, {
+        'max-height': 'none !important',
+        'display': 'block'
+      });
+      
+      // Update React-friendly way
+      currentSelectedImage.classList.remove('has-unsaved-resize');
+      currentSelectedImage.classList.add('resized-image-saved');
+      
+      // Clear the preview overlay
+      clearPreviewOverlay();
+      
+      // Update our dimensions state with the applied dimensions
+      setDimensions({
+        width: currentWidth,
+        height: currentHeight
+      });
+      
+      console.log('✅ Image size saved with HTML attributes:', `width="${currentWidth}" height="${currentHeight}"`);
+      
+      // Show visual feedback
+      if (currentSelectedImage && isImageValid(currentSelectedImage)) {
+        // Store current outline for later restoration
+        const originalOutline = currentSelectedImage.style.outline;
+        
+        // Apply success highlight
+        safelyApplyStyles(currentSelectedImage, {
+          'outline': '3px solid #28a745'
+        });
+        
+        setTimeout(() => {
+          // Reset outline if we have a valid image reference
+          if (currentSelectedImage && isImageValid(currentSelectedImage)) {
+            safelyApplyStyles(currentSelectedImage, {
+              'outline': originalOutline || ''
+            });
+          }
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('Error saving image resize changes:', error);
+      // Fallback approach for error cases
+      try {
+        if (isImageValid(selectedImage)) {
+          const { width, height } = safelyGetImageDimensions(selectedImage);
+          
+          safelyApplyAttributes(selectedImage, {
+            'width': width.toString(),
+            'height': height.toString(),
+            'data-width': width.toString(),
+            'data-height': height.toString(),
+            'data-resized': 'true'
+          });
+          
+          safelyApplyStyles(selectedImage, {
+            'width': `${width}px`,
+            'height': `${height}px`,
+            'max-width': 'none',
+            'max-height': 'none'
+          });
+          
+          console.log('Applied fallback save with dimensions:', width, height);
+          shouldUpdateState = true;
+          clearPreviewOverlay();
+        }
+      } catch (fallbackError) {
+        console.error('Even fallback save failed:', fallbackError);
+      }
+    }
+    
+    // Apply all state updates at once to prevent multiple re-renders
+    if (shouldUpdateState) {
+      // Only update the selected image if we have a valid reference to it
+      setHasChanges(false);
+      setShowPreview(false);
+    }
+  }, [quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay]);
+  
+  // Handler for resizing an image - updates dimensions and auto-applies changes
   const handleResize = useCallback((direction: 'width' | 'height', delta: number) => {
     console.log(`HandleResize called: ${direction}, delta: ${delta}`);
     
@@ -610,20 +831,16 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     console.log('Current dimensions:', { width: currentWidth, height: currentHeight });
     
-    // Calculate new dimensions
+    // Calculate new dimensions - allow free stretching
     let newWidth: number;
     let newHeight: number;
 
     if (direction === 'width') {
       newWidth = Math.max(50, currentWidth + delta);
-      // Maintain aspect ratio
-      const aspectRatio = currentHeight / currentWidth;
-      newHeight = Math.round(newWidth * aspectRatio);
+      newHeight = currentHeight; // Keep height unchanged for width adjustments
     } else {
       newHeight = Math.max(30, currentHeight + delta);
-      // Maintain aspect ratio
-      const aspectRatio = currentWidth / currentHeight;
-      newWidth = Math.round(newHeight * aspectRatio);
+      newWidth = currentWidth; // Keep width unchanged for height adjustments
     }
     
     const roundedWidth = Math.round(newWidth);
@@ -631,22 +848,33 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     console.log('New dimensions:', { width: roundedWidth, height: roundedHeight });
     
-    // Update preview dimensions in state - don't modify the actual image yet
+    // Update preview dimensions in state
     setPreviewDimensions({
       width: roundedWidth,
       height: roundedHeight
     });
-    
-    // Mark that the image has unsaved changes
+      // Mark that the image has unsaved changes
     selectedImage.classList.add('has-unsaved-resize');
     
-    // Show a preview overlay over the image instead of modifying the actual image
+    // Show a preview overlay over the image
     updatePreviewOverlay(selectedImage, roundedWidth, roundedHeight);
     setShowPreview(true);
     
-    // Mark that we have changes that need to be saved
+    // Mark that we have changes and auto-apply them
     setHasChanges(true);
     console.log('Setting preview dimensions to:', { width: roundedWidth, height: roundedHeight });
+    
+    // Auto-apply changes after a short delay to allow for multiple quick button clicks
+    setTimeout(() => {
+      if (selectedImage && (previewDimensions.width !== 0 || previewDimensions.height !== 0)) {
+        console.log('Auto-applying button resize changes');
+        saveChanges();
+        
+        // Remove resizing-active state
+        document.body.classList.remove('resizing-active');
+        if (controlsRef.current) controlsRef.current.classList.remove('active');
+      }
+    }, 300); // 300ms delay to allow for multiple quick clicks
     
     // Update controls position with a slight delay
     setTimeout(() => {
@@ -654,7 +882,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         updateControlsPosition(controlsRef.current, selectedImage);
       }
     }, 100);
-  }, [selectedImage, updateControlsPosition, dimensions, previewDimensions, updatePreviewOverlay]);
+  }, [selectedImage, updateControlsPosition, dimensions, previewDimensions, updatePreviewOverlay, saveChanges]);
   
   // Handler for resetting image size
   const resetSize = useCallback(() => {
@@ -756,314 +984,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       }, 1000);
     } catch (error) {
       console.error('Error when resetting image size:', error);
-    }
-  }, [selectedImage, updateControlsPosition, updatePreviewOverlay]);
-  // Handler for saving image changes - applies the preview dimensions to the actual image
-  const saveChanges = useCallback(() => {
-    console.log('Save changes called, hasChanges:', hasChanges);
-    
-    if (!quillRef.current || !hasChanges) {
-      console.log('No changes to save or no quill ref');
-      return;
-    }
-    
-    // Use a local variable to track state changes
-    // This prevents unnecessary re-renders during the save operation
-    let shouldUpdateState = false;
-    
-    if (!selectedImage || !isImageValid(selectedImage)) {
-      console.log('Selected image is no longer valid, attempting to recover');
-      // We'll try to find the image in the editor below
-    }
-    
-    try {
-      const quill = quillRef.current.getEditor();
-      
-      // Use the preview dimensions that we've been tracking
-      const currentWidth = previewDimensions.width || dimensions.width;
-      const currentHeight = previewDimensions.height || dimensions.height;
-      
-      // Make sure we have valid dimensions
-      if (!currentWidth || !currentHeight) {
-        console.warn('Invalid dimensions, aborting save');
-        return;
-      }
-      
-      console.log('Saving dimensions:', currentWidth, currentHeight);
-      
-      // Get image source for identification
-      let imgSrc = '';
-      let currentSelectedImage: HTMLImageElement | null = selectedImage;
-      
-      // If the selected image is no longer valid, try to find it in the editor
-      if (!selectedImage || !isImageValid(selectedImage)) {
-        // We need to find the image in the editor
-        const images = quillRef.current.getEditor().root.querySelectorAll('img.has-unsaved-resize');
-        if (images.length > 0) {
-          currentSelectedImage = images[0] as HTMLImageElement;
-          shouldUpdateState = true; // Mark for state update at the end
-          console.log('Recovered image reference');
-        } else {
-          console.warn('Could not find image to save');
-          return;
-        }
-      }
-      
-      // At this point currentSelectedImage should be valid, but let's double-check
-      if (!currentSelectedImage || !isImageValid(currentSelectedImage)) {
-        console.warn('Invalid image reference even after recovery attempt');
-        return;
-      }
-      
-      imgSrc = currentSelectedImage.getAttribute('src') || '';
-      if (!imgSrc) {
-        console.warn('No image source found, aborting save');
-        return;
-      }
-      
-      // Create a function to safely update image attributes & style
-      const updateImageSize = (img: HTMLImageElement) => {
-        if (!isImageValid(img)) return;
-        
-        console.log('Persisting image dimensions:', currentWidth, currentHeight);
-        
-        // Use our dedicated helper to ensure consistent application of size
-        persistImageSize(img, currentWidth, currentHeight);
-        
-        // Force a browser repaint to ensure the changes are applied
-        void img.offsetHeight;
-      };
-      
-      // NOW we update the selected image with the preview dimensions
-      // At this point currentSelectedImage is guaranteed to be non-null because of our checks
-      updateImageSize(currentSelectedImage as HTMLImageElement);
-      safelyApplyStyles(currentSelectedImage, {
-        'max-height': 'none !important',
-        'display': 'block'
-      });
-      
-      // Update React-friendly way
-      currentSelectedImage.classList.remove('has-unsaved-resize');
-      currentSelectedImage.classList.add('resized-image-saved');
-        
-      // Force Quill to register our changes by directly updating the HTML
-      setTimeout(() => {
-        if (quillRef.current) {
-          try {
-            console.log('Starting save process with dimensions:', currentWidth, currentHeight);
-            
-            // Use Quill's delta API
-            const quill = quillRef.current.getEditor();
-            
-            // First, identify the image in the document
-            const imageIndex = findImageInQuillContent(quill, imgSrc);
-            
-            if (imageIndex !== -1) {
-              // Store the current selection
-              const range = quill.getSelection();
-              
-              // Create a Delta to update just the image attributes
-              const delta = new Delta();
-              delta.retain(imageIndex);
-              delta.retain(1, { 
-                attributes: { 
-                  width: currentWidth.toString(),
-                  height: currentHeight.toString()
-                } 
-              });
-              
-              // Apply the delta
-              console.log('Applying delta to update image at index', imageIndex);
-              quill.updateContents(delta, 'api');
-              
-              // Force the browser to redraw
-              void document.body.offsetHeight;
-              
-              // Restore selection if it existed
-              if (range) {
-                quill.setSelection(range);
-              }
-              
-              console.log('✅ Updated image via Quill delta');
-            } else {
-              // Fallback to innerHTML approach if Delta fails
-              console.log('Fallback to innerHTML approach');
-              const html = quillRef.current.getEditor().root.innerHTML;
-              quillRef.current.getEditor().root.innerHTML = html;
-            }
-            
-            // Re-select the image to maintain the active state
-            setTimeout(() => {
-              const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${imgSrc}"]`);
-              if (images.length > 0) {
-                const updatedImage = images[0] as HTMLImageElement;
-                // Apply current dimensions again to ensure they're properly set
-                updateImageSize(updatedImage);
-                setSelectedImage(updatedImage);
-                
-                // Re-apply the resize properties to ensure they stick
-                safelyApplyStyles(updatedImage, {
-                  'width': `${currentWidth}px !important`,
-                  'height': `${currentHeight}px !important`,
-                  'max-width': 'none !important',
-                  'max-height': 'none !important'
-                });
-              }
-            }, 50);
-          } catch (error) {
-            console.error('Error during save process:', error);
-            // Fallback to a simpler approach
-            const html = quillRef.current.getEditor().root.innerHTML;
-            quillRef.current.getEditor().root.innerHTML = html;
-          }
-        }
-      }, 10);
-        // We'll use a ref to track the onChange triggering to prevent multiple calls
-      const isChangingRef = useRef(false);
-      
-      // Use a debounced trigger for onChange to prevent multiple rapid calls
-      const debouncedTriggerOnChange = useCallback(
-        debounce(() => {
-          if (!quillRef.current || isChangingRef.current) return;
-          
-          try {
-            isChangingRef.current = true;
-            
-            // Get the final HTML after all our changes
-            const finalHTML = quillRef.current.getEditor().root.innerHTML;
-            
-            if (quillRef.current.props?.onChange) {
-              // Apply changes in a single operation
-              console.log('⚡ Triggering onChange via React props (debounced)');
-              quillRef.current.props.onChange(finalHTML);
-            }
-            
-            // Reset the flag with a delay to prevent immediate re-renders
-            setTimeout(() => {
-              isChangingRef.current = false;
-            }, 300);
-          } catch (error) {
-            console.error('Error in final onChange trigger:', error);
-            isChangingRef.current = false;
-          }
-        }, 250),
-        []
-      );
-      
-      // Apply a single update to all images then trigger onChange once
-      setTimeout(() => {
-        if (!quillRef.current) return;
-        
-        try {
-          // Force update all images with data-resized attribute
-          const images = quillRef.current.getEditor().root.querySelectorAll('img[data-resized="true"]');
-          images.forEach((img: HTMLImageElement) => {
-            const width = img.getAttribute('data-width');
-            const height = img.getAttribute('data-height');
-            if (width && height) {
-              persistImageSize(img, parseInt(width), parseInt(height));
-            }
-          });
-          
-          // Trigger the debounced onChange
-          debouncedTriggerOnChange();
-        } catch (error) {
-          console.error('Error applying image updates:', error);
-        }
-      }, 200);
-      
-      // Update our dimensions state with the applied dimensions
-      setDimensions({
-        width: currentWidth,
-        height: currentHeight
-      });
-      
-      // Clear the preview overlay      clearPreviewOverlay();
-      
-      // Batch state updates to prevent multiple re-renders
-      // We'll apply these at the end
-      shouldUpdateState = true;
-      
-      console.log('✅ Image size saved with HTML attributes:',` width="${currentWidth}" height="${currentHeight}"`);
-      
-      // Show visual feedback
-      if (currentSelectedImage && isImageValid(currentSelectedImage)) {
-        // Store current outline for later restoration
-        const originalOutline = currentSelectedImage.style.outline;
-        
-        // Apply success highlight
-        safelyApplyStyles(currentSelectedImage, {
-          'outline': '3px solid #28a745'
-        });
-        
-        // Capture source to find the image later if needed
-        const savedImgSrc = imgSrc;
-        
-        setTimeout(() => {
-          // Get a fresh reference to the image if needed
-          let imageToUpdate = currentSelectedImage;
-          
-          if (!imageToUpdate || !isImageValid(imageToUpdate)) {
-            // Try to find the image by src
-            if (quillRef.current && savedImgSrc) {
-              const images = quillRef.current.getEditor().root.querySelectorAll(`img[src="${savedImgSrc}"]`);
-              if (images && images.length > 0) {
-                imageToUpdate = images[0] as HTMLImageElement;                // Update our reference if it's valid
-                if (isImageValid(imageToUpdate)) {
-                  // Simply update the state with the new image
-                  setSelectedImage(imageToUpdate);
-                }
-              }
-            }
-          }
-          
-          // Reset outline if we have a valid image reference
-          if (imageToUpdate && isImageValid(imageToUpdate)) {
-            safelyApplyStyles(imageToUpdate, {
-              'outline': originalOutline || ''
-            });
-          }
-        }, 2000);
-      }
-      
-    } catch (error) {
-      console.error('Error saving image resize changes:', error);
-        // Fallback approach for error cases
-      try {
-        if (isImageValid(selectedImage)) {
-          const { width, height } = safelyGetImageDimensions(selectedImage);
-          
-          safelyApplyAttributes(selectedImage, {
-            'width': width.toString(),
-            'height': height.toString(),
-            'data-width': width.toString(),
-            'data-height': height.toString(),
-            'data-resized': 'true'
-          });
-          
-          safelyApplyStyles(selectedImage, {
-            'width': `${width}px`,
-            'height': `${height}px`,
-            'max-width': 'none',
-            'max-height': 'none'
-          });
-          
-          console.log('Applied fallback save with dimensions:', width, height);
-          shouldUpdateState = true;
-          clearPreviewOverlay();
-        }
-      } catch (fallbackError) {
-        console.error('Even fallback save failed:', fallbackError);
-      }
-    }
-      // Apply all state updates at once to prevent multiple re-renders
-    if (shouldUpdateState) {
-      // Only update the selected image if we have a valid reference to it
-      // This prevents the currentSelectedImage scope issue
-      setHasChanges(false);
-      setShowPreview(false);
-    }
-  }, [quillRef, hasChanges, selectedImage, dimensions, previewDimensions, clearPreviewOverlay]);
+    }  }, [selectedImage, updateControlsPosition, updatePreviewOverlay]);
     // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
   const isVisible = Boolean(showControls && selectedImage);
   // Memoize dimensions to prevent unnecessary re-renders
@@ -1077,8 +998,239 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   // Get dimensions to display
   const displayWidth = displayDimensions.width;
   const displayHeight = displayDimensions.height;
+      // Define the resize handle positions
+  const resizeHandlePositions = useMemo(() => [
+    'top-left', 'top', 'top-right',
+    'right',             'left', 
+    'bottom-left', 'bottom', 'bottom-right'
+  ], []);
+  // Function to handle the start of a resize drag
+  const handleResizeDragStart = useCallback((e: MouseEvent, handlePosition: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-  // Render resize controls - always render but conditionally show/hide  
+    if (!selectedImage || !isImageValid(selectedImage)) return;
+    
+    console.log('Starting drag for handle:', handlePosition);
+    
+    // Mark as dragging
+    setIsDragging(true);
+    setCurrentHandlePosition(handlePosition);
+    
+    // Mark as resizing active to prevent other events
+    document.body.classList.add('resizing-active');
+    
+    // Save starting position
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    
+    // Save starting dimensions
+    const currentWidth = previewDimensions.width || dimensions.width;
+    const currentHeight = previewDimensions.height || dimensions.height;
+    setDragStartDimensions({ width: currentWidth, height: currentHeight });
+    
+    // Add dragging class to the handle
+    const handle = e.target as HTMLElement;
+    handle.classList.add('dragging');
+    
+    console.log('Drag start setup complete');
+  }, [selectedImage, previewDimensions, dimensions]);
+
+  // Function to render resize handles around the selected image
+  const renderResizeHandles = useCallback(() => {
+    if (!selectedImage || !isImageValid(selectedImage)) return;
+    
+    // Remove any existing handles first
+    document.querySelectorAll('.image-resize-handle').forEach(handle => {
+      handle.remove();
+    });
+
+    // Get image position and dimensions
+    const rect = selectedImage.getBoundingClientRect();
+    const editorContainer = selectedImage.closest('.ql-editor')?.parentElement?.parentElement?.parentElement;
+    const editorRect = editorContainer ? editorContainer.getBoundingClientRect() : { top: 0, left: 0 };
+    
+    // Create or get the resize wrapper
+    let wrapper = document.querySelector('.image-resize-wrapper') as HTMLDivElement;
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'image-resize-wrapper';
+      if (editorContainer) {
+        editorContainer.appendChild(wrapper);
+      } else {
+        document.body.appendChild(wrapper);
+      }
+    }
+
+    // Position the wrapper around the image
+    const top = rect.top - (editorContainer ? editorRect.top : 0);
+    const left = rect.left - (editorContainer ? editorRect.left : 0);
+    
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = `${top}px`;
+    wrapper.style.left = `${left}px`;
+    wrapper.style.width = `${rect.width}px`;
+    wrapper.style.height = `${rect.height}px`;
+    wrapper.style.pointerEvents = 'none';
+    wrapper.style.zIndex = '9998';
+
+    // Set the reference
+    wrapperRef.current = wrapper;
+    
+    // Create handles
+    resizeHandlePositions.forEach(position => {
+      const handle = document.createElement('div');
+      handle.className = `image-resize-handle ${position}`;
+      handle.dataset.position = position;
+      handle.style.pointerEvents = 'all'; // Make handles interactive
+      
+      // Add event listeners for resizing
+      handle.addEventListener('mousedown', (e: MouseEvent) => handleResizeDragStart(e, position));
+      
+      wrapper.appendChild(handle);
+    });
+  }, [selectedImage, resizeHandlePositions, handleResizeDragStart]);
+  // Handle drag movement during resize
+  const handleResizeDragMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !selectedImage || !currentHandlePosition) return;
+
+    e.preventDefault();
+    
+    const dx = e.clientX - dragStartPos.x;
+    const dy = e.clientY - dragStartPos.y;
+    
+    // Initial width and height
+    const startWidth = dragStartDimensions.width;
+    const startHeight = dragStartDimensions.height;
+    
+    // Calculate aspect ratio for corner handles (optional constraint)
+    const aspectRatio = startHeight / startWidth;
+    
+    // New dimensions - allow free stretching for all handles
+    let newWidth = startWidth;
+    let newHeight = startHeight;
+    
+    // Calculate new dimensions based on handle position
+    switch (currentHandlePosition) {
+      case 'top-left':
+        newWidth = Math.max(50, startWidth - dx);
+        newHeight = Math.max(30, startHeight - dy);
+        break;
+      case 'top':
+        newHeight = Math.max(30, startHeight - dy);
+        // Keep width unchanged for top/bottom handles
+        break;
+      case 'top-right':
+        newWidth = Math.max(50, startWidth + dx);
+        newHeight = Math.max(30, startHeight - dy);
+        break;
+      case 'right':
+        newWidth = Math.max(50, startWidth + dx);
+        // Keep height unchanged for left/right handles
+        break;
+      case 'bottom-right':
+        newWidth = Math.max(50, startWidth + dx);
+        newHeight = Math.max(30, startHeight + dy);
+        break;
+      case 'bottom':
+        newHeight = Math.max(30, startHeight + dy);
+        // Keep width unchanged for top/bottom handles
+        break;
+      case 'bottom-left':
+        newWidth = Math.max(50, startWidth - dx);
+        newHeight = Math.max(30, startHeight + dy);
+        break;
+      case 'left':
+        newWidth = Math.max(50, startWidth - dx);
+        // Keep height unchanged for left/right handles
+        break;
+    }
+    
+    // Round dimensions
+    newWidth = Math.round(newWidth);
+    newHeight = Math.round(newHeight);
+    
+    // Update preview dimensions
+    setPreviewDimensions({
+      width: newWidth,
+      height: newHeight
+    });
+    
+    // Show preview overlay
+    updatePreviewOverlay(selectedImage, newWidth, newHeight);
+    setShowPreview(true);
+    
+    // Mark image as having unsaved changes
+    selectedImage.classList.add('has-unsaved-resize');
+    
+    // Mark that we have changes
+    setHasChanges(true);
+    
+    // Update resize handles position
+    if (wrapperRef.current) {
+      wrapperRef.current.style.width = `${newWidth}px`;
+      wrapperRef.current.style.height = `${newHeight}px`;
+      
+      // Update resize handles position by re-rendering them
+      setTimeout(() => {
+        renderResizeHandles();
+      }, 0);
+    }
+  }, [isDragging, selectedImage, currentHandlePosition, dragStartPos, dragStartDimensions, updatePreviewOverlay, renderResizeHandles]);
+  // Handle end of resize drag operation
+  const handleResizeDragEnd = useCallback(() => {
+    console.log('Ending drag operation');
+    
+    // Auto-apply the changes immediately on mouse release
+    if (hasChanges && selectedImage) {
+      console.log('Auto-applying resize changes');
+      saveChanges();
+    }
+    
+    // Reset dragging state
+    setIsDragging(false);
+    setCurrentHandlePosition(null);
+    
+    // Remove dragging class from all handles
+    document.querySelectorAll('.image-resize-handle.dragging').forEach(handle => {
+      handle.classList.remove('dragging');
+    });
+    
+    // Remove resizing-active class to allow normal interactions
+    setTimeout(() => {
+      document.body.classList.remove('resizing-active');
+      if (controlsRef.current) controlsRef.current.classList.remove('active');
+    }, 100);
+    
+    // Update controls position with a slight delay
+    setTimeout(() => {
+      if (controlsRef.current && selectedImage) {
+        updateControlsPosition(controlsRef.current, selectedImage);
+      }
+    }, 150);  }, [selectedImage, updateControlsPosition, hasChanges, saveChanges]);
+
+  // Effect to manage mouse event listeners during drag operations
+  useEffect(() => {
+    if (isDragging) {
+      console.log('Adding global mouse event listeners for drag');
+      document.addEventListener('mousemove', handleResizeDragMove);
+      document.addEventListener('mouseup', handleResizeDragEnd);
+      
+      return () => {
+        console.log('Cleaning up global mouse event listeners');
+        document.removeEventListener('mousemove', handleResizeDragMove);
+        document.removeEventListener('mouseup', handleResizeDragEnd);
+      };
+    }
+  }, [isDragging, handleResizeDragMove, handleResizeDragEnd]);
+
+  // Effect to render resize handles when an image is selected
+  useEffect(() => {
+    if (selectedImage && showControls && !isDragging) {
+      renderResizeHandles();
+    }
+  }, [selectedImage, showControls, renderResizeHandles, isDragging]);
+  
+  // Render resize controls - always render but conditionally show/hide
   return (
     <div 
       ref={controlsRef}
@@ -1105,16 +1257,17 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       onClick={(e) => {
         e.stopPropagation(); // Prevent click event from bubbling
       }}
-    >
-      <div className="flex flex-col gap-2 text-sm">
-        {/* Dimensions display - more prominent with better styling */}        
-        <div className="dimensions-display">
-          <span>{displayWidth} × {displayHeight}</span>
-          {hasChanges ? (
-            <span className="text-orange-500 text-xs font-medium ml-2">
-              ● Unsaved
+    >      <div className="flex flex-col gap-2 text-sm">
+        {/* Dimensions display - more prominent with better styling */}          <div className="dimensions-display p-1 border-b border-gray-200 mb-1">
+          <span className="font-medium">{displayWidth} × {displayHeight}</span>
+          {isDragging ? (
+            <span className="text-blue-500 text-xs font-medium ml-2">
+              ● Resizing
             </span>
           ) : null}
+          <div className="text-xs text-gray-500 mt-1">
+            Drag resize handles to stretch freely
+          </div>
         </div>
           
         {/* Resize controls */}
@@ -1190,48 +1343,13 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             className="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
             title="Reset size"
             type="button"
-          >
-            Reset
-          </button>          <button onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              document.body.classList.add('resizing-active');
-              if (controlsRef.current) controlsRef.current.classList.add('active');
-              
-              try {
-                if (hasChanges && selectedImage) {
-                  // Save the current dimensions from state to ensure correct saving
-                  saveChanges();
-                  
-                  // After saving, immediately allow the panel to be closed
-                  document.body.classList.remove('resizing-active');
-                  if (controlsRef.current) controlsRef.current.classList.remove('active');
-                }
-              } catch (error) {
-                console.error('Failed to save image changes:', error);
-                // Always ensure resizing-active is removed even on error
-                document.body.classList.remove('resizing-active');
-                if (controlsRef.current) controlsRef.current.classList.remove('active');
-              }
-              
-              // Close the resize controller after saving
-              setTimeout(() => {
-                closeResizeController(true); // Keep selected image reference
-              }, 100);
-            }}
-            className={`px-4 py-1 rounded text-xs font-medium transition-colors ${
-              hasChanges 
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
-                : 'bg-gray-300 text-gray-600 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-300'
-            }`}
-            title={hasChanges ? "Save changes" : "No changes to save"}
-            type="button"
-            disabled={!hasChanges}
-          >
-            Save
+          >            Reset
           </button>
         </div>
-          {/* Save button row is now combined with the main controls row above */}
+          {/* Status message showing auto-apply behavior */}
+        <div className="text-xs text-gray-500 mt-2 text-center">
+          Changes auto-apply on mouse release
+        </div>
       </div>
     </div>
   );

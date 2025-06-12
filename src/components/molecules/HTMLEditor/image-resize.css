@@ -29,7 +29,8 @@
 
 /* Force intrinsic size style to be applied - important for resizing */
 .ql-editor img[width][height]:not([width="0"]):not([height="0"]) {
-  object-fit: contain !important;
+  object-fit: fill !important;
+
 }
 
 /* Ensure Quill can't override these styles */
@@ -39,18 +40,24 @@
   height: initial !important;
   max-width: none !important;
   max-height: none !important;
+  object-fit: fill !important;
+
 }
 
 /* Selected image styling */
 .ql-editor img.selected-for-resize {
   outline: 2px solid #007bff !important;
   outline-offset: 2px !important;
+  object-fit: fill !important;
+
 }
 
 /* Unsaved image styling */
 .ql-editor img.has-unsaved-resize {
   outline: 2px dashed #ff9800 !important;
   outline-offset: 2px !important;
+  object-fit: fill !important;
+
 }
 
 /* Saved image styling for feedback */
@@ -58,6 +65,16 @@
   outline: 3px solid #28a745 !important;
   outline-offset: 2px !important;
   transition: outline-color 0.5s ease-in-out !important;
+  object-fit: fill !important;
+
+}
+
+/* Stretch images to fill their containers */
+.ql-editor img.image-stretch,
+.ql-editor img[data-stretch="true"] {
+  object-fit: fill !important;
+  object-position: center !important;
+  display: block !important;
 }
 
 /* Ensure Quill doesn't override our styles */

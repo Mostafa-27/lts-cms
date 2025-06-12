@@ -11,13 +11,16 @@
   transform: translateY(0);
   background-color: #fff;
   border: 1px solid #ddd;
+  visibility: hidden !important;
 }
 
 .resize-controls.active {
+  visibility: hidden !important;
+
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
   opacity: 1 !important;
   display: block !important;
-  visibility: visible !important;
+  /* visibility: visible !important; */
 }
 
 .resize-controls button {
@@ -38,7 +41,7 @@
 .resize-controls.active {
   opacity: 1 !important;
   display: block !important;
-  visibility: visible !important;
+  /* visibility: visible !important; */
 }
 
 /* Ensure buttons are visible and positioned correctly */
@@ -75,6 +78,8 @@
 img.selected-for-resize {
   outline: 2px solid #007bff !important;
   outline-offset: 2px !important;
+  object-fit: fill !important;
+
 }
 
 .resize-controls .gap-2 {
@@ -85,4 +90,5 @@ img.selected-for-resize {
 img.selected-for-resize {
   outline: 2px solid #007bff !important;
   outline-offset: 2px !important;
+  object-fit: fill !important;
 }
