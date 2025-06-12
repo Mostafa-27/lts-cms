@@ -300,28 +300,18 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       return;
     }
     
-    // Make sure this is actually a click outside, not a click caught during event bubbling
     // Check if click was on controls or inside controls
-    const clickedOnControls = controlsRef.current && (
-      controlsRef.current === target || 
-      controlsRef.current.contains(target) || 
-      target.closest('.resize-controls') !== null
-    );
+    const clickedOnControls = target.closest('.resize-controls') !== null;
     
     // Check if we clicked on an image
-    const clickedOnImage = target.tagName === 'IMG' || target.closest('img') !== null;
+    const clickedOnImage = target.tagName === 'IMG';
     
     // Check if we clicked on editor buttons
     const clickedOnEditorButton = target.closest('.ql-editor button') !== null;
-      // If click is outside of all relevant elements, close the panel
+    
+    // If click is outside of all relevant elements, close the panel
     if (!clickedOnControls && !clickedOnImage && !clickedOnEditorButton) {
       console.log('Outside click detected, closing panel');
-      
-      // Prevent closing if we have unsaved changes
-      if (hasChanges && selectedImage) {
-        console.log('Panel has unsaved changes, consider showing a confirmation dialog');
-        // Optionally add a confirmation dialog here if needed
-      }
       
       // First remove highlight from images
       if (quillRef.current) {
@@ -329,7 +319,6 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         editor.querySelectorAll('img').forEach((img: HTMLImageElement) => {
           safelyApplyStyles(img, { 'outline': '' });
           img.classList.remove('selected-for-resize');
-          img.classList.remove('has-unsaved-resize');
         });
       }
       
@@ -341,21 +330,14 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         controlsRef.current.classList.remove('active');
         controlsRef.current.style.display = 'none';
         controlsRef.current.style.visibility = 'hidden';
-        controlsRef.current.style.opacity = '0';
       }
-      
-      // Ensure resizing-active class is removed from body
-      document.body.classList.remove('resizing-active');
       
       // Finally update the state
       setSelectedImage(null);
       setShowControls(false);
       setHasChanges(false);
-      setShowPreview(false);
-      
-      // Reset preview dimensions
-      setPreviewDimensions({ width: 0, height: 0 });    }
-  }, [quillRef, clearPreviewOverlay, hasChanges, selectedImage]);
+    }
+  }, [quillRef, clearPreviewOverlay]);
 
   // Window resize handler
   useEffect(() => {
@@ -384,33 +366,31 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
 
     // Use click event for more reliable interaction
     editor.addEventListener('click', handleImageClick);
-      // Improved handling of document clicks for more reliable outside click detection
+    
+    // Directly attach the click event handler to document with an immediate call
+    // This ensures better compatibility with all browsers and scenarios
     const handleDocumentClick = (e: MouseEvent) => {
-      // If the click originated from inside the controls, don't process it as an outside click
-      if (e.target && controlsRef.current && controlsRef.current.contains(e.target as Node)) {
-        return;
-      }
-      
-      // Skip handling if we're actively resizing to avoid accidental panel closures
+      // Skip handling if we're actively resizing
       if (document.body.classList.contains('resizing-active')) {
         return;
       }
       
       // We need a small delay to allow other click handlers to complete first
-      // This ensures we have the most up-to-date DOM state
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         handleClickOutside(e);
-      }, 10);
+      });
     };
     
-    // Use mousedown with capture phase for earlier interception of clicks
+    // Use mousedown for more reliable capture of clicks outside the panel
     document.addEventListener('mousedown', handleDocumentClick, { capture: true });
     
-    // Also add a standard click handler as a backup with capture
-    document.addEventListener('click', handleDocumentClick, { capture: true });    return () => {
+    // Also add a standard click handler as a fallback
+    document.addEventListener('click', handleDocumentClick);
+
+    return () => {
       editor.removeEventListener('click', handleImageClick);
       document.removeEventListener('mousedown', handleDocumentClick, { capture: true });
-      document.removeEventListener('click', handleDocumentClick, { capture: true });
+      document.removeEventListener('click', handleDocumentClick);
     };
   }, [quillRef, handleImageClick, handleClickOutside]);
   
@@ -922,12 +902,12 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   
   // Don't return null - instead render a hidden component to avoid unmounting/remounting issues
   const isVisible = Boolean(showControls && selectedImage);
-    // Get dimensions to display
+  
+  // Get dimensions to display
   const displayWidth = previewDimensions.width || dimensions.width || 0;
   const displayHeight = previewDimensions.height || dimensions.height || 0;
     
-  // Render resize controls - always render but conditionally show/hide
-  return (
+  // Render resize controls - always render but conditionally show/hide  return (
     <div 
       ref={controlsRef}
       className={`resize-controls ${document.body.classList.contains('resizing-active') ? 'active' : ''}`}
@@ -946,13 +926,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         color: '#333'
       }}
-      onMouseDown={(e) => {
-        e.stopPropagation(); // Prevent mousedown from triggering outside click
-        e.preventDefault();  // Prevent default browser behavior
-      }}
-      onClick={(e) => {
-        e.stopPropagation(); // Prevent click event from bubbling
-      }}
+      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from triggering outside click
     >
       <div className="flex flex-col gap-2 text-sm">
         {/* Dimensions display - more prominent with better styling */}        
