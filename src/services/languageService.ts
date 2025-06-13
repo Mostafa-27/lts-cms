@@ -7,7 +7,7 @@ export interface Language {
 
 export const fetchLanguages = async (): Promise<{ languages: Language[]; defaultLangId: number | null }> => {
   try {
-    const response = await fetch('https://dist-ten-gold.vercel.app/api/languages');
+    const response = await fetch('https://amarinaproperties.com/lts-backend/api/languages');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

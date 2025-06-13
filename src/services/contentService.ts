@@ -1,7 +1,7 @@
 import { BrowserStorage } from "@/utils/browserStorage";
 import { TOKEN_COOKIE_KEY } from "@/utils/constants";
 
-const API_BASE_URL = 'https://dist-ten-gold.vercel.app/api';
+const API_BASE_URL = 'https://amarinaproperties.com/lts-backend/api';
 
 interface SectionContent {
   // Define a more specific type if possible, based on the JSON structure

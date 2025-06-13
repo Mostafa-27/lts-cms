@@ -2,7 +2,7 @@ import { BrowserStorage } from '@/utils/browserStorage';
 import { TOKEN_COOKIE_KEY } from '@/utils/constants';
 import axios from 'axios';
 
-const API_URL = 'https://dist-ten-gold.vercel.app/api'; // Updated API URL
+const API_URL = 'https://amarinaproperties.com/lts-backend/api'; // Updated API URL
 
 const api = axios.create({
   baseURL: API_URL,
