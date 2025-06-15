@@ -1,7 +1,8 @@
 import React from "react";
+import { ContactPage as ContactPageContent } from "../organism/pages/contactPage";
 
 const ContactPage: React.FC = () => {
-  return <div className="p-8 dark:bg-gray-900 dark:text-gray-100 min-h-screen">ContactPage</div>;
+  return <ContactPageContent />;
 };
 
 export default ContactPage;
