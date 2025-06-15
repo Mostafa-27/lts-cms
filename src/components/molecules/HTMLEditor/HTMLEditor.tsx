@@ -254,8 +254,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
         style={{ 
           resize: 'vertical', 
           overflow: 'hidden',
-          minHeight: '300px',
-          maxHeight: '800px',
+        
           position: 'relative' /* Ensure relative positioning for absolute children */
         }}
       >

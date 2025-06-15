@@ -6,6 +6,8 @@ import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
 import { fetchLanguages, type Language } from '../../../../../services/languageService';
 import { TextInput } from '../../../../molecules/textinput';
+import IconPicker from '../../../../molecules/iconPicker/IconPicker';
+import { getIconByName } from '../../../../../utils/iconLibrary';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
@@ -245,13 +247,40 @@ const CareerBenefits: React.FC = () => {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                   <div className="px-4 pb-4 space-y-4 border-t dark:border-gray-600">
-                                    <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                      <div>
+                                    <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">                                      <div>
                                         <label className="block text-sm font-medium mb-1 dark:text-gray-300">Icon Name</label>
                                         <Controller
                                           name={`trainings.${index}.icon` as const}
                                           control={control}
-                                          render={({ field }) => <TextInput {...field} placeholder="e.g., Handshake, Brain" />}
+                                          rules={{ required: 'Icon is required' }}
+                                          render={({ field }) => (
+                                            <div className="space-y-2">
+                                              <IconPicker
+                                                value={field.value || "Award"}
+                                                onValueChange={field.onChange}
+                                                placeholder="Select an icon"
+                                                className="w-full"
+                                              />
+                                              {field.value && (
+                                                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                                                  <div className="flex items-center gap-2">
+                                                    {(() => {
+                                                      const IconComponent = getIconByName(field.value);
+                                                      return IconComponent ? (
+                                                        <IconComponent className="w-5 h-5 text-blue-500" />
+                                                      ) : (
+                                                        <div className="w-5 h-5 bg-gray-300 rounded" />
+                                                      );
+                                                    })()}
+                                                    <span className="font-medium">Selected:</span>
+                                                    <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono">
+                                                      {field.value}
+                                                    </code>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
                                         />
                                       </div>
                                       <div>
@@ -343,13 +372,40 @@ const CareerBenefits: React.FC = () => {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                   <div className="px-4 pb-4 space-y-4 border-t dark:border-gray-600">
-                                    <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                      <div>
+                                    <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">                                      <div>
                                         <label className="block text-sm font-medium mb-1 dark:text-gray-300">Icon Name</label>
                                         <Controller
                                           name={`benefits.${index}.icon` as const}
                                           control={control}
-                                          render={({ field }) => <TextInput {...field} placeholder="e.g., Heart, Clock" />}
+                                          rules={{ required: 'Icon is required' }}
+                                          render={({ field }) => (
+                                            <div className="space-y-2">
+                                              <IconPicker
+                                                value={field.value || "Heart"}
+                                                onValueChange={field.onChange}
+                                                placeholder="Select an icon"
+                                                className="w-full"
+                                              />
+                                              {field.value && (
+                                                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                                                  <div className="flex items-center gap-2">
+                                                    {(() => {
+                                                      const IconComponent = getIconByName(field.value);
+                                                      return IconComponent ? (
+                                                        <IconComponent className="w-5 h-5 text-blue-500" />
+                                                      ) : (
+                                                        <div className="w-5 h-5 bg-gray-300 rounded" />
+                                                      );
+                                                    })()}
+                                                    <span className="font-medium">Selected:</span>
+                                                    <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono">
+                                                      {field.value}
+                                                    </code>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
                                         />
                                       </div>
                                       <div>
