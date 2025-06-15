@@ -203,7 +203,7 @@ const AboutCertificates: React.FC = () => {
                               </div>
                               
                               <div className="space-y-4">
-                                <div>
+                                {/* <div>
                                   <Controller
                                     name={`certificates.${index}.logo` as const}
                                     control={control}
@@ -215,7 +215,7 @@ const AboutCertificates: React.FC = () => {
                                       />
                                     )}
                                   />
-                                </div>
+                                </div> */}
                                 
                                 <div>
                                   <label className="block text-sm font-medium mb-1 dark:text-gray-300">Certificate Title</label>

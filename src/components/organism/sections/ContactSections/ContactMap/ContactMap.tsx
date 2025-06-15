@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Trash2, Settings } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Settings, MapPin } from "lucide-react";
 import React, { useEffect, useState } from 'react';
 import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -6,6 +6,8 @@ import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
 import { fetchLanguages, type Language } from '../../../../../services/languageService';
 import { TextInput } from '../../../../molecules/textinput';
+import MapSelector from '../../../../molecules/MapSelector';
+import MapPreview from '../../../../molecules/MapPreview/MapPreview';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
@@ -28,6 +30,8 @@ const SECTION_ID = 18; // Contact Map section ID
 
 const ContactMap: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMapSelectorOpen, setIsMapSelectorOpen] = useState(false);
+  const [selectedBranchIndex, setSelectedBranchIndex] = useState<number | null>(null);
   const { refreshPreview } = useSplitLayout();
   
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<ContactMapFormData>({
@@ -89,7 +93,6 @@ const ContactMap: React.FC = () => {
       setSelectedLangId(lang.id);
     }
   };
-
   const onSubmit: SubmitHandler<ContactMapFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
@@ -103,6 +106,38 @@ const ContactMap: React.FC = () => {
       console.error('Failed to update contact map content:', error);
       toast.error('Failed to update Contact Map section.');
     }
+  };
+
+  // Map selector functions
+  const openMapSelector = (branchIndex: number) => {
+    setSelectedBranchIndex(branchIndex);
+    setIsMapSelectorOpen(true);
+  };
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
+    if (selectedBranchIndex !== null) {
+      // Generate a standardized URL format that can be easily parsed by MapPreview
+      // Include coordinates in the URL for easy extraction
+      const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.01},${lat-0.01},${lng+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lng}`;
+      
+      // Update the form field with the selected location
+      const currentValues = watch();
+      const updatedBranches = [...currentValues.branches];
+      updatedBranches[selectedBranchIndex] = {
+        ...updatedBranches[selectedBranchIndex],
+        mapLocation: embedUrl
+      };
+      
+      reset({
+        ...currentValues,
+        branches: updatedBranches
+      });
+      
+      const branchName = updatedBranches[selectedBranchIndex].name || 'branch';
+      const locationInfo = address ? ` at ${address}` : ` at coordinates ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      toast.success(`Location selected for ${branchName}${locationInfo}`);
+    }
+    setIsMapSelectorOpen(false);
+    setSelectedBranchIndex(null);
   };
 
   return (
@@ -212,35 +247,38 @@ const ContactMap: React.FC = () => {
                                         rules={{ required: 'Branch name is required' }}
                                         render={({ field }) => <TextInput {...field} placeholder="Enter branch name" />}
                                       />
-                                    </div>
-
-                                    <div>
-                                      <label className="block text-sm font-medium mb-1 dark:text-gray-300">Map Embed URL</label>
-                                      <Controller
-                                        name={`branches.${index}.mapLocation` as const}
-                                        control={control}
-                                        render={({ field }) => <TextInput {...field} placeholder="Enter Google Maps embed URL" />}
-                                      />
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Get the embed URL from Google Maps: Share → Embed a map → Copy HTML (extract src attribute)
-                                      </p>
-                                    </div>
-
-                                    {watchedBranches?.[index]?.mapLocation && (
-                                      <div className="mt-4">
-                                        <label className="block text-sm font-medium mb-2 dark:text-gray-300">Map Preview</label>
-                                        <div className="border rounded-lg overflow-hidden">
-                                          <iframe
-                                            src={watchedBranches[index].mapLocation}
-                                            width="100%"
-                                            height="200"
-                                            style={{ border: 0 }}
-                                            allowFullScreen
-                                            loading="lazy"
-                                            referrerPolicy="no-referrer-when-downgrade"
-                                            title={`Map for ${watchedBranches[index].name}`}
+                                    </div>                                    <div>
+                                      <label className="block text-sm font-medium mb-1 dark:text-gray-300">Map Location</label>
+                                      <div className="flex gap-2">
+                                        <div className="flex-1">
+                                          <Controller
+                                            name={`branches.${index}.mapLocation` as const}
+                                            control={control}
+                                            render={({ field }) => <TextInput {...field} placeholder="Enter map embed URL or select location" />}
                                           />
                                         </div>
+                                        <Button
+                                          type="button"
+                                          onClick={() => openMapSelector(index)}
+                                          variant="outline"
+                                          size="sm"
+                                          className="whitespace-nowrap"
+                                        >
+                                          <MapPin className="h-4 w-4 mr-2" />
+                                          Select on Map
+                                        </Button>
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        You can either paste a map embed URL or click "Select on Map" to choose a location interactively using OpenStreetMap
+                                      </p>
+                                    </div>                                    {watchedBranches?.[index]?.mapLocation && (
+                                      <div className="mt-4">
+                                        <label className="block text-sm font-medium mb-2 dark:text-gray-300">Map Preview</label>
+                                        <MapPreview
+                                          mapLocation={watchedBranches[index].mapLocation}
+                                          branchName={watchedBranches[index].name || `Branch #${index + 1}`}
+                                          height={200}
+                                        />
                                       </div>
                                     )}
                                   </div>
@@ -265,10 +303,17 @@ const ContactMap: React.FC = () => {
               ))}
             </Tabs>
           )}
-          
-          {languages.length === 0 && <p className="dark:text-gray-300">Loading languages...</p>}
+            {languages.length === 0 && <p className="dark:text-gray-300">Loading languages...</p>}
         </CollapsibleContent>
       </Collapsible>
+      
+      {/* Map Selector Modal */}
+      <MapSelector
+        isOpen={isMapSelectorOpen}
+        onClose={() => setIsMapSelectorOpen(false)}
+        onLocationSelect={handleLocationSelect}
+        branchName={selectedBranchIndex !== null ? watch(`branches.${selectedBranchIndex}.name`) : undefined}
+      />
     </div>
   );
 };
