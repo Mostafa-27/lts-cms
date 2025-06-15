@@ -1,7 +1,8 @@
 import React from "react";
+import { AboutPage as AboutPageContent } from "../organism/pages/aboutPage";
 
 const AboutPage: React.FC = () => {
-  return <div className="p-8 dark:bg-gray-900 dark:text-gray-100 min-h-screen">AboutPage</div>;
+  return <AboutPageContent />;
 };
 
 export default AboutPage;

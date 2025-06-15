@@ -11,51 +11,69 @@ import { SplitLayout } from '../../layouts/SplitLayout';
 import { FullscreenModal } from '../../../molecules/FullscreenModal';
 import { useFullscreen } from '../../../../hooks/useFullscreen';
 
-// Import Career Sections
-import CareerHero from '../../sections/CareerSections/CareerHero/CareerHero';
-import CareerIntro from '../../sections/CareerSections/CareerIntro/CareerIntro';
-import CareerPositions from '../../sections/CareerSections/CareerPositions/CareerPositions';
-import CareerBenefits from '../../sections/CareerSections/CareerBenefits/CareerBenefits';
+// Import About Sections
+import AboutHero from '../../sections/AboutSections/AboutHero/AboutHero';
+import AboutMission from '../../sections/AboutSections/AboutMission/AboutMission';
+import AboutLeadership from '../../sections/AboutSections/AboutLeadership/AboutLeadership';
+import AboutTeams from '../../sections/AboutSections/AboutTeams/AboutTeams';
+import AboutCertificates from '../../sections/AboutSections/AboutCertificates/AboutCertificates';
+import AboutCTA from '../../sections/AboutSections/AboutCTA/AboutCTA';
 
-import { Briefcase, Users, Award, Target, Maximize2 } from 'lucide-react';
+import { Settings, Target, Users, MapPin, Award, Maximize2 } from 'lucide-react';
 
 // Define sections for better organization
 const sections = [
   { 
     id: '1', 
     name: 'Hero', 
-    component: CareerHero, 
-    anchor: 'career-hero',
+    component: AboutHero, 
+    anchor: 'about-hero',
     hasTabs: false,
     icon: Target,
   },
   { 
     id: '2', 
-    name: 'Intro', 
-    component: CareerIntro, 
-    anchor: 'career-intro',
+    name: 'Mission & Vision', 
+    component: AboutMission, 
+    anchor: 'about-mission',
+    hasTabs: false,
+    icon: Target,
+  },
+  { 
+    id: '3', 
+    name: 'Leadership', 
+    component: AboutLeadership, 
+    anchor: 'about-leadership',
     hasTabs: false,
     icon: Users,
   },
   { 
-    id: '3', 
-    name: 'Open Positions', 
-    component: CareerPositions, 
-    anchor: 'career-positions',
+    id: '4', 
+    name: 'Teams', 
+    component: AboutTeams, 
+    anchor: 'about-teams',
     hasTabs: false,
-    icon: Briefcase,
+    icon: MapPin,
   },
   { 
-    id: '4', 
-    name: 'Benefits', 
-    component: CareerBenefits, 
-    anchor: 'career-benefits',
+    id: '5', 
+    name: 'Certificates', 
+    component: AboutCertificates, 
+    anchor: 'about-certificates',
     hasTabs: false,
     icon: Award,
   },
+  { 
+    id: '6', 
+    name: 'CTA', 
+    component: AboutCTA, 
+    anchor: 'about-cta',
+    hasTabs: false,
+    icon: Settings,
+  },
 ];
 
-const CareerPageContent: React.FC = () => {
+const AboutPageContent: React.FC = () => {
   const { 
     fullscreenSection, 
     isExiting, 
@@ -76,7 +94,7 @@ const CareerPageContent: React.FC = () => {
         onClose={exitFullscreen}
       >
         <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+          previewUrl={`https://gh-website-nu.vercel.app/about-sections/${section.id}`}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -91,7 +109,7 @@ const CareerPageContent: React.FC = () => {
     <div className="flex-grow bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto py-8 px-4">
         <Card className="p-6 mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
-          <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100 border-b dark:border-gray-700 pb-4">Career Page Content Management</h1>
+          <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100 border-b dark:border-gray-700 pb-4">About Page Content Management</h1>
         </Card>       
          
         <Accordion
@@ -131,7 +149,7 @@ const CareerPageContent: React.FC = () => {
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/career-sections/${section.id}`}
+                      previewUrl={`https://gh-website-nu.vercel.app/about-sections/${section.id}`}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}
@@ -149,4 +167,4 @@ const CareerPageContent: React.FC = () => {
   );
 };
 
-export default CareerPageContent;
+export default AboutPageContent;
