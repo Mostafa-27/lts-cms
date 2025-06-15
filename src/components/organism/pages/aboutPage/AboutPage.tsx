@@ -24,7 +24,7 @@ import { Settings, Target, Users, MapPin, Award, Maximize2 } from 'lucide-react'
 // Define sections for better organization
 const sections = [
   { 
-    id: '1', 
+    id: '20', 
     name: 'Hero', 
     component: AboutHero, 
     anchor: 'about-hero',
@@ -32,7 +32,7 @@ const sections = [
     icon: Target,
   },
   { 
-    id: '2', 
+    id: '21', 
     name: 'Mission & Vision', 
     component: AboutMission, 
     anchor: 'about-mission',
@@ -40,7 +40,7 @@ const sections = [
     icon: Target,
   },
   { 
-    id: '3', 
+    id: '22', 
     name: 'Leadership', 
     component: AboutLeadership, 
     anchor: 'about-leadership',
@@ -48,7 +48,7 @@ const sections = [
     icon: Users,
   },
   { 
-    id: '4', 
+    id: '23', 
     name: 'Teams', 
     component: AboutTeams, 
     anchor: 'about-teams',
@@ -56,7 +56,7 @@ const sections = [
     icon: MapPin,
   },
   { 
-    id: '5', 
+    id: '24', 
     name: 'Certificates', 
     component: AboutCertificates, 
     anchor: 'about-certificates',
@@ -64,7 +64,7 @@ const sections = [
     icon: Award,
   },
   { 
-    id: '6', 
+    id: '25', 
     name: 'CTA', 
     component: AboutCTA, 
     anchor: 'about-cta',
@@ -94,7 +94,7 @@ const AboutPageContent: React.FC = () => {
         onClose={exitFullscreen}
       >
         <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/about-sections/${section.id}`}
+          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -149,7 +149,7 @@ const AboutPageContent: React.FC = () => {
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/about-sections/${section.id}`}
+                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}

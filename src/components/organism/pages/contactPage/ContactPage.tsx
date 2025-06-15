@@ -22,7 +22,7 @@ import { Settings, Phone, Map, Target, Maximize2 } from 'lucide-react';
 // Define sections for better organization
 const sections = [
   { 
-    id: '1', 
+    id: '16', 
     name: 'Hero', 
     component: ContactHero, 
     anchor: 'contact-hero',
@@ -30,7 +30,7 @@ const sections = [
     icon: Target,
   },
   { 
-    id: '2', 
+    id: '17', 
     name: 'Contact Info', 
     component: ContactInfo, 
     anchor: 'contact-info',
@@ -38,7 +38,7 @@ const sections = [
     icon: Phone,
   },
   { 
-    id: '3', 
+    id: '18', 
     name: 'Contact Map', 
     component: ContactMap, 
     anchor: 'contact-map',
@@ -46,7 +46,7 @@ const sections = [
     icon: Map,
   },
   { 
-    id: '4', 
+    id: '19', 
     name: 'Contact CTA', 
     component: ContactCTA, 
     anchor: 'contact-cta',
@@ -75,7 +75,7 @@ const ContactPageContent: React.FC = () => {
         onClose={exitFullscreen}
       >
         <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/contact-sections/${section.id}`}
+          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -130,7 +130,7 @@ const ContactPageContent: React.FC = () => {
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/contact-sections/${section.id}`}
+                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}

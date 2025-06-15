@@ -20,7 +20,7 @@ import { Settings, List, Target, Maximize2 } from 'lucide-react';
 // Define sections for better organization
 const sections = [
   { 
-    id: '1', 
+    id: '14', 
     name: 'Hero', 
     component: ServicesHero, 
     anchor: 'services-hero',
@@ -28,7 +28,7 @@ const sections = [
     icon: Target,
   },
   { 
-    id: '2', 
+    id: '15', 
     name: 'Services List', 
     component: ServicesList, 
     anchor: 'services-list',
@@ -58,7 +58,7 @@ const ServicesPageContent: React.FC = () => {
         onClose={exitFullscreen}
       >
         <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/services-sections/${section.id}`}
+          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -113,7 +113,7 @@ const ServicesPageContent: React.FC = () => {
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/services-sections/${section.id}`}
+                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}

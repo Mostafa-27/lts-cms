@@ -22,7 +22,7 @@ import { Briefcase, Users, Award, Target, Maximize2 } from 'lucide-react';
 // Define sections for better organization
 const sections = [
   { 
-    id: '1', 
+    id: '10', 
     name: 'Hero', 
     component: CareerHero, 
     anchor: 'career-hero',
@@ -30,7 +30,7 @@ const sections = [
     icon: Target,
   },
   { 
-    id: '2', 
+    id: '12', 
     name: 'Intro', 
     component: CareerIntro, 
     anchor: 'career-intro',
@@ -38,7 +38,7 @@ const sections = [
     icon: Users,
   },
   { 
-    id: '3', 
+    id: '13', 
     name: 'Open Positions', 
     component: CareerPositions, 
     anchor: 'career-positions',
@@ -46,7 +46,7 @@ const sections = [
     icon: Briefcase,
   },
   { 
-    id: '4', 
+    id: '11', 
     name: 'Benefits', 
     component: CareerBenefits, 
     anchor: 'career-benefits',
@@ -131,7 +131,7 @@ const CareerPageContent: React.FC = () => {
                 <AccordionContent>
                   <div className="px-1 py-2">
                     <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/career-sections/${section.id}`}
+                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}
