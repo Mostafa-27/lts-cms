@@ -1,7 +1,8 @@
 import React from "react";
+import { CareerPage as CareerPageContent } from "../organism/pages/careerPage";
 
 const CareerPage: React.FC = () => {
-  return <div className="p-8 dark:bg-gray-900 dark:text-gray-100 min-h-screen">CareerPage</div>;
+  return <CareerPageContent />;
 };
 
 export default CareerPage;

@@ -1,7 +1,8 @@
 import React from "react";
+import { ServicesPage as ServicesPageContent } from "../organism/pages/servicesPage";
 
 const ServicesPage: React.FC = () => {
-  return <div className="p-8 dark:bg-gray-900 dark:text-gray-100 min-h-screen">ServicesPage</div>;
+  return <ServicesPageContent />;
 };
 
 export default ServicesPage;
