@@ -82,15 +82,14 @@ const AboutPageContent: React.FC = () => {
     enterFullscreen, 
     exitFullscreen 
   } = useFullscreen();
-  
-  // Use shared language context
-  const { getActiveLanguageName } = useLanguage();
+    // Use shared language context
+  const { getActiveLanguageCode } = useLanguage();
 
   // Function to build preview URL with language parameter
   const buildPreviewUrl = (sectionId: string) => {
     const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
-    const languageName = getActiveLanguageName(sectionId);
-    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    const languageCode = getActiveLanguageCode(sectionId);
+    const url = languageCode ? `${baseUrl}?lang=${languageCode}` : baseUrl;
     return url;
   };
 

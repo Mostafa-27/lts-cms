@@ -96,9 +96,8 @@ console.log('Fetched content:', content);        if (content) {
         </CollapsibleTrigger> */}
         
         <CollapsibleContent className="space-y-4 mt-1">
-          {languages.length > 0 && selectedLangId !== null ? (
-            <Tabs
-              defaultValue={languages.find(l => l.id === selectedLangId)?.name}
+          {languages.length > 0 && selectedLangId !== null ? (            <Tabs
+              defaultValue={languages.find(l => l.id === selectedLangId)?.code}
               onValueChange={handleTabChange}
               className="w-full mb-6"
             >
@@ -106,48 +105,45 @@ console.log('Fetched content:', content);        if (content) {
                 {languages.map(lang => (
                   <TabsTrigger 
                     key={lang.id} 
-                    value={lang.name}
+                    value={lang.code}
                     className="text-xs sm:text-sm px-2 py-2 min-w-0 truncate"
                   >
-                    {lang.name.toUpperCase()}
+                    {lang.code.toUpperCase()}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
               {languages.map(lang => (
-                <TabsContent key={lang.id} value={lang.name}>
+                <TabsContent key={lang.id} value={lang.code}>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4 bg-white dark:bg-gray-800 shadow rounded-lg">
                     {/* Title */}
-                    <div>
-                      <label htmlFor={`hero-title-${lang.name}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
+                    <div>                      <label htmlFor={`hero-title-${lang.code}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
                         Title
                       </label>
                       <Controller
                         name="title"
                         control={control}
                         rules={{ required: 'Title is required' }}
-                        render={({ field }) => <TextInput id={`hero-title-${lang.name}`} {...field} />}
-                      />                      {errors.title && (
+                        render={({ field }) => <TextInput id={`hero-title-${lang.code}`} {...field} />}
+                      />{errors.title && (
                         <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.title.message}</p>
                       )}
                     </div>
-                    <div>
-                      <label htmlFor={`hero-subtitle-${lang.name}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
+                    <div>                      <label htmlFor={`hero-subtitle-${lang.code}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
                         Subtitle
                       </label>
                       <Controller
                         name="subtitle"
                         control={control}
                         rules={{ required: 'Subtitle is required' }}
-                        render={({ field }) => <TextInput id={`hero-subtitle-${lang.name}`} {...field} />}
-                      />                      {errors.subtitle && (
+                        render={({ field }) => <TextInput id={`hero-subtitle-${lang.code}`} {...field} />}
+                      />{errors.subtitle && (
                         <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.subtitle.message}</p>
                       )}
                     </div>
 
                     {/* Description */}
-                    <div>
-                      <label htmlFor={`hero-description-${lang.name}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
+                    <div>                      <label htmlFor={`hero-description-${lang.code}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
                         Description
                       </label>
                       <Controller
@@ -155,15 +151,13 @@ console.log('Fetched content:', content);        if (content) {
                         control={control}
                         rules={{ required: 'Description is required' }}
                         render={({ field }) => (
-                          <HTMLEditor id={`hero-description-${lang.name}`} value={field.value} onChange={field.onChange} />
+                          <HTMLEditor id={`hero-description-${lang.code}`} value={field.value} onChange={field.onChange} />
                         )}
                       />
                       {errors.description && (
                         <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>
-                      )}                    </div>
-
-                    <Button type="submit" className="w-full">
-                      Save Changes for {lang.name.toUpperCase()}
+                      )}                    </div>                    <Button type="submit" className="w-full">
+                      Save Changes for {lang.code.toUpperCase()}
                     </Button>
                   </form>
                 </TabsContent>
@@ -184,3 +178,4 @@ console.log('Fetched content:', content);        if (content) {
 };
 
 export default HomeHeroSection;
+

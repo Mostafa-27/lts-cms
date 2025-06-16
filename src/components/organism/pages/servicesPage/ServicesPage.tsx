@@ -45,8 +45,7 @@ const ServicesPageContent: React.FC = () => {
     isLoading, 
     enterFullscreen, 
     exitFullscreen 
-  } = useFullscreen();
-  const { getActiveLanguageName, languages } = useLanguage();
+  } = useFullscreen();  const { getActiveLanguageCode, languages } = useLanguage();
   const [languageUpdateKey, setLanguageUpdateKey] = useState(0);
 
   // Track language changes to force preview URL updates
@@ -55,8 +54,8 @@ const ServicesPageContent: React.FC = () => {
   }, [languages]);
   const buildPreviewUrl = (sectionId: string) => {
     const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
-    const languageName = getActiveLanguageName(sectionId);
-    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    const languageCode = getActiveLanguageCode(sectionId);
+    const url = languageCode ? `${baseUrl}?lang=${languageCode}` : baseUrl;
     return url;
   };
 

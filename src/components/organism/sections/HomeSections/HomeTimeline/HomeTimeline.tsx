@@ -127,20 +127,20 @@ const HomeTimelineSection: React.FC = () => {
       <ConfirmDialog />
       {/* <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-gray-700 dark:text-gray-200">Timeline Section</h2> */}
       {languages.length > 0 && selectedLangId !== null && (
-        <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.name} onValueChange={handleTabChange} className="w-full mb-6">
+        <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.code} onValueChange={handleTabChange} className="w-full mb-6">
           <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1">
             {languages.map((lang) => (
               <TabsTrigger 
                 key={lang.id} 
-                value={lang.name}
+                value={lang.code}
                 className="text-xs sm:text-sm px-2 py-2 min-w-0 truncate"
               >
-                {lang.name.toUpperCase()}
+                {lang.code.toUpperCase()}
               </TabsTrigger>
             ))}
           </TabsList>
           {languages.map((lang) => (
-            <TabsContent key={lang.id} value={lang.name} className="space-y-6">
+            <TabsContent key={lang.id} value={lang.code} className="space-y-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Basic Fields Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -306,7 +306,7 @@ const HomeTimelineSection: React.FC = () => {
 
                 <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
                     <Button type="submit" className="w-full">
-                                        Save Changes for {lang.name.toUpperCase()}
+                                        Save Changes for {lang.code.toUpperCase()}
                                       </Button>
                 </div>
               </form>
@@ -327,3 +327,4 @@ const HomeTimelineSection: React.FC = () => {
 };
 
 export default HomeTimelineSection;
+

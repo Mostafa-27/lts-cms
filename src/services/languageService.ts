@@ -1,6 +1,8 @@
 export interface Language {
   id: number;
   name: string;
+  code: string;
+  icon: string;
   created_at?: string; // Optional as it's not used in the components
   updated_at?: string; // Optional as it's not used in the components
 }

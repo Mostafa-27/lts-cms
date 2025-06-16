@@ -11,6 +11,8 @@ interface SectionContent {
 interface Language {
   id: number;
   name: string;
+  code: string;
+  icon: string;
   created_at: string;
   updated_at: string;
 }

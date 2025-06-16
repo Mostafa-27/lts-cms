@@ -120,17 +120,17 @@ const HomeAnalyticsSection: React.FC = () => {
        
           <CollapsibleContent className="space-y-4 mt-4">
           {languages.length > 0 && selectedLangId !== null && (
-            <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.name} onValueChange={handleTabChange} className="w-full mb-6">
+            <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.code} onValueChange={handleTabChange} className="w-full mb-6">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1">
                 {languages.map((lang) => (
                   <TabsTrigger 
                     key={lang.id} 
-                    value={lang.name}
+                    value={lang.code}
                     className="text-xs sm:text-sm px-2 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
-                    {lang.name.toUpperCase()}
+                    {lang.code.toUpperCase()}
                   </TabsTrigger>              ))}
-              </TabsList>          {languages.map((lang) => (<TabsContent key={lang.id} value={lang.name}>
+              </TabsList>          {languages.map((lang) => (<TabsContent key={lang.id} value={lang.code}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 
                 {/* Title and Subtitle */}
@@ -342,7 +342,7 @@ const HomeAnalyticsSection: React.FC = () => {
                 </Card>
 
                 <Button type="submit" className="w-full" size="lg">
-                  Save Changes for {lang.name.toUpperCase()}
+                  Save Changes for {lang.code.toUpperCase()}
                 </Button>
               </form>
             </TabsContent>
@@ -362,3 +362,4 @@ const HomeAnalyticsSection: React.FC = () => {
 };
 
 export default HomeAnalyticsSection;
+

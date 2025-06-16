@@ -122,37 +122,34 @@ const HomeAboutusSection: React.FC = () => {
         </CollapsibleTrigger> */}
         
         <CollapsibleContent className="space-y-4 mt-4">
-          {languages.length > 0 && selectedLangId !== null && (
-            <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.name} onValueChange={handleTabChange} className="w-full mb-6">
+          {languages.length > 0 && selectedLangId !== null && (            <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.code} onValueChange={handleTabChange} className="w-full mb-6">
               <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1">
                 {languages.map((lang) => (
                   <TabsTrigger 
                     key={lang.id} 
-                    value={lang.name}
+                    value={lang.code}
                     className="text-xs sm:text-sm px-2 py-2 min-w-0 truncate"
                   >
-                    {lang.name.toUpperCase()}
+                    {lang.code.toUpperCase()}
                   </TabsTrigger>
                 ))}
               </TabsList>
               {languages.map((lang) => (
-                <TabsContent key={lang.id} value={lang.name}>
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <Controller
+                <TabsContent key={lang.id} value={lang.code}>
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">                    <Controller
                       name="title"
                       control={control}
-                      render={({ field }) => <TextInput label="Title" {...field} id={`title-${lang.name}`} />}
+                      render={({ field }) => <TextInput label="Title" {...field} id={`title-${lang.code}`} />}
                     />
                   <div>
-                      <label htmlFor={`hero-description-${lang.name}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
+                      <label htmlFor={`hero-description-${lang.code}`} className="block text-sm font-medium mb-1 dark:text-gray-200">
                         Description
                       </label>
                       <Controller
                         name="description"
                         control={control}
-                        rules={{ required: 'Description is required' }}
-                        render={({ field }) => (
-                          <HTMLEditor id={`hero-description-${lang.name}`} value={field.value} onChange={field.onChange} />
+                        rules={{ required: 'Description is required' }}                        render={({ field }) => (
+                          <HTMLEditor id={`hero-description-${lang.code}`} value={field.value} onChange={field.onChange} />
                         )}
                       />
                       {errors.description && (
@@ -162,7 +159,7 @@ const HomeAboutusSection: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <ImagePicker
-                          id={`image-${lang.name}`}
+                          id={`image-${lang.code}`}
                           label="Image"
                           value={field.value}
                           onImageChange={(imageData: ImageData) => {
@@ -172,7 +169,7 @@ const HomeAboutusSection: React.FC = () => {
                       )}
                     />
                                         <Button type="submit" className="w-full">
-                                                            Save Changes for {lang.name.toUpperCase()}
+                                                            Save Changes for {lang.code.toUpperCase()}
                                                           </Button>
                   </form>
                 </TabsContent>
@@ -187,3 +184,4 @@ const HomeAboutusSection: React.FC = () => {
 };
 
 export default HomeAboutusSection;
+

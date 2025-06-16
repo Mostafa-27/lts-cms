@@ -85,9 +85,8 @@ const ServicesHero: React.FC = () => {
     <div className="p-0 dark:bg-gray-900">
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         <CollapsibleContent className="space-y-4 mt-1">
-          {languages.length > 0 && selectedLangId !== null ? (
-            <Tabs
-              defaultValue={languages.find(l => l.id === selectedLangId)?.name}
+          {languages.length > 0 && selectedLangId !== null ? (            <Tabs
+              defaultValue={languages.find(l => l.id === selectedLangId)?.code}
               onValueChange={handleTabChange}
               className="w-full mb-6"
             >
@@ -95,16 +94,16 @@ const ServicesHero: React.FC = () => {
                 {languages.map(lang => (
                   <TabsTrigger 
                     key={lang.id} 
-                    value={lang.name}
+                    value={lang.code}
                     className="text-xs sm:text-sm px-2 py-2 min-w-0 truncate"
                   >
-                    {lang.name.toUpperCase()}
+                    {lang.code.toUpperCase()}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
               {languages.map(lang => (
-                <TabsContent key={lang.id} value={lang.name}>
+                <TabsContent key={lang.id} value={lang.code}>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4 bg-white dark:bg-gray-800 shadow rounded-lg">
                     {/* Title */}
                     <div>
@@ -157,7 +156,7 @@ const ServicesHero: React.FC = () => {
                     </div>
 
                     <Button type="submit" className="w-full">
-                      Save Changes for {lang.name.toUpperCase()}
+                      Save Changes for {lang.code.toUpperCase()}
                     </Button>
                   </form>
                 </TabsContent>
@@ -178,3 +177,4 @@ const ServicesHero: React.FC = () => {
 };
 
 export default ServicesHero;
+

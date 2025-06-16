@@ -65,8 +65,8 @@ const ContactPageContent: React.FC = () => {
     exitFullscreen 
   } = useFullscreen();
 
-  // Use shared language context
-  const { getActiveLanguageName, languages } = useLanguage();
+  // Use shared language context  
+  const { getActiveLanguageCode, languages } = useLanguage();
   const [languageUpdateKey, setLanguageUpdateKey] = useState(0);
 
   // Track language changes to force preview URL updates
@@ -77,10 +77,10 @@ const ContactPageContent: React.FC = () => {
   // Function to build preview URL with language parameter
   const buildPreviewUrl = useCallback((sectionId: string) => {
     const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
-    const languageName = getActiveLanguageName(sectionId);
-    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    const languageCode = getActiveLanguageCode(sectionId);
+    const url = languageCode ? `${baseUrl}?lang=${languageCode}` : baseUrl;
     return url;
-  }, [getActiveLanguageName, languageUpdateKey]);
+  }, [getActiveLanguageCode, languageUpdateKey]);
 
   // If in fullscreen mode, render only the fullscreen section
   if (fullscreenSection) {

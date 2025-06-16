@@ -97,8 +97,7 @@ console.log('Fetched content:', content);        if (content) {
 
         <CollapsibleContent className="space-y-4 mt-4">
           {languages.length > 0 && selectedLangId !== null ? (
-            <Tabs
-              defaultValue={languages.find(l => l.id === selectedLangId)?.name}
+            <Tabs              defaultValue={languages.find(l => l.id === selectedLangId)?.code}
               onValueChange={handleTabChange}
               className="w-full mb-6"
             >
@@ -106,16 +105,16 @@ console.log('Fetched content:', content);        if (content) {
                 {languages.map(lang => (
                   <TabsTrigger 
                     key={lang.id} 
-                    value={lang.name}
+                    value={lang.code}
                     className="text-xs sm:text-sm px-2 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
-                    {lang.name.toUpperCase()}
+                    {lang.code.toUpperCase()}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
               {languages.map(lang => (
-                <TabsContent key={lang.id} value={lang.name}>
+                <TabsContent key={lang.id} value={lang.code}>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4 bg-white dark:bg-gray-800 shadow rounded-lg">
                     
                     {/* Title and Subtitle */}
@@ -172,7 +171,7 @@ console.log('Fetched content:', content);        if (content) {
                     </div>
 
                     <Button type="submit" className="w-full" size="lg">
-                      Save Changes for {lang.name.toUpperCase()}
+                      Save Changes for {lang.code.toUpperCase()}
                     </Button>
                   </form>
                 </TabsContent>
@@ -191,3 +190,4 @@ console.log('Fetched content:', content);        if (content) {
 };
 
 export default HomeSustainabilitySection;
+
