@@ -4,7 +4,7 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { TextInput } from '../../../../molecules/textinput';
 import IconPicker from '../../../../molecules/iconPicker/IconPicker';
 import { getIconByName } from '../../../../../utils/iconLibrary';
@@ -38,6 +38,7 @@ const SECTION_ID = 11; // Career Benefits section ID
 const CareerBenefits: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview } = useSplitLayout();
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('11');
   
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<CareerBenefitsFormData>({
     defaultValues: {
@@ -57,28 +58,10 @@ const CareerBenefits: React.FC = () => {
     control,
     name: "benefits",
   });
-
   const watchedTrainings = watch("trainings");
   const watchedBenefits = watch("benefits");
 
   const [ConfirmDialog, confirmDialog] = useConfirmDialog();
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -110,15 +93,7 @@ const CareerBenefits: React.FC = () => {
         });
       }
     };
-    loadContent();
-  }, [selectedLangId, reset]);
-
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
+    loadContent();  }, [selectedLangId, reset]);
 
   const onSubmit: SubmitHandler<CareerBenefitsFormData> = async (data) => {
     if (selectedLangId === null) {

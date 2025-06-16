@@ -4,7 +4,7 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
@@ -40,6 +40,7 @@ const SECTION_ID = 17; // Contact Info section ID
 const ContactInfo: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview } = useSplitLayout();
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('17');
   
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<ContactInfoFormData>({
     defaultValues: {
@@ -53,28 +54,10 @@ const ContactInfo: React.FC = () => {
     control,
     name: "branches",
   });
-
   const watchedBranches = watch("branches");
 
   const [ConfirmDialog, confirmDialog] = useConfirmDialog();
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
   const [openBranches, setOpenBranches] = useState<{ [key: number]: boolean }>({});
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -92,15 +75,7 @@ const ContactInfo: React.FC = () => {
         reset(contactDefaultData.ContactInfo);
       }
     };
-    loadContent();
-  }, [selectedLangId, reset]);
-
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
+    loadContent();  }, [selectedLangId, reset]);
 
   const onSubmit: SubmitHandler<ContactInfoFormData> = async (data) => {
     if (selectedLangId === null) {

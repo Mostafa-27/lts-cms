@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
@@ -18,6 +18,7 @@ const SECTION_ID = 9; // CTA section ID
 const HomeCTASection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview } = useSplitLayout();
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('9');
   
   const {
     control,
@@ -26,26 +27,8 @@ const HomeCTASection: React.FC = () => {
     formState: { errors }  } = useForm<CTAFormData>({
     defaultValues: {
       title: ''
-    }
-  });
+    }  });
 
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
   useEffect(() => {
     const loadContent = async () => {
       if (selectedLangId === null) return;
@@ -79,13 +62,9 @@ const HomeCTASection: React.FC = () => {
       }
     };
 
-    loadContent();
-  }, [selectedLangId, reset]);
+    loadContent();  }, [selectedLangId, reset]);
 
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) setSelectedLangId(lang.id);
-  };  const onSubmit: SubmitHandler<CTAFormData> = async (data) => {
+  const onSubmit: SubmitHandler<CTAFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');
       return;

@@ -4,13 +4,13 @@ import { TextInput } from '../../../../molecules/textinput';
 import { HTMLEditor } from '../../../../molecules/HTMLEditor';
 import { Button } from '../../../../ui/button';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from "../../../../../services/languageService"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { ChevronDown, ChevronUp, Calendar,  Trophy } from "lucide-react";
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 
 interface TimelineEvent {
   id?: number;
@@ -33,6 +33,9 @@ const HomeTimelineSection: React.FC = () => {
   const [isCollapsedEvents, setIsCollapsedEvents] = useState<boolean[]>([]);
   const { refreshPreview } = useSplitLayout();
 
+  // Use section-specific language management
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('4');
+
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<TimelineFormData>({
     defaultValues: {
       title: '',
@@ -47,11 +50,8 @@ const HomeTimelineSection: React.FC = () => {
   });
 
   const watchedEvents = watch("events");
-  
-  const [ConfirmDialog, confirmDialog] = useConfirmDialog();
+    const [ConfirmDialog, confirmDialog] = useConfirmDialog();
 
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
   // Initialize collapsed state for events - first one open, rest collapsed
   useEffect(() => {
     setIsCollapsedEvents(fields.map((_, index) => index !== 0));
@@ -61,23 +61,9 @@ const HomeTimelineSection: React.FC = () => {
     setIsCollapsedEvents(prev => {
       const newState = [...prev];
       newState[index] = !newState[index];
-      return newState;
-    });
+      return newState;    });
   };
   useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);  useEffect(() => {
     const loadContent = async () => {
       if (selectedLangId === null) return;
       try {
@@ -132,17 +118,11 @@ const HomeTimelineSection: React.FC = () => {
       toast.success('Timeline section updated successfully!');
       refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
-      console.error('Failed to update timeline content:', error);
-      toast.error('Failed to update Timeline section.');
+      console.error('Failed to update timeline content:', error);      toast.error('Failed to update Timeline section.');
     }
   };
 
-  const handleTabChange = (langName: string) => {
-    const lang = languages.find(l => l.name === langName);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };  return (
+  return (
     <div className="p-4 lg:p-6 border rounded-lg shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700 max-w-full overflow-hidden">
       <ConfirmDialog />
       {/* <h2 className="text-2xl lg:text-3xl font-bold mb-6 text-gray-700 dark:text-gray-200">Timeline Section</h2> */}

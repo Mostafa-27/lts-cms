@@ -4,7 +4,6 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from "../../../../../services/languageService";
 import { ImagePicker } from '../../../../molecules/imagePicker';
 import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
@@ -12,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
 import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 
 interface ImageData {
   imageUrl: string;
@@ -50,6 +50,9 @@ const HomeCustomersSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const { refreshPreview } = useSplitLayout();
 
+  // Use section-specific language management
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('5');
+
   const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm<CustomersFormData>({
     defaultValues: {
       title: '',
@@ -70,26 +73,9 @@ const HomeCustomersSection: React.FC = () => {
     name: "stats",
     keyName: "fieldId", // Use a different key name to avoid conflicts
   });
-
   const [ConfirmDialog, confirmDialog] = useConfirmDialog();
 
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
   useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);  useEffect(() => {
     const loadContent = async () => {
       if (selectedLangId === null) return;
       setIsLoading(true);
@@ -151,14 +137,7 @@ const HomeCustomersSection: React.FC = () => {
         setIsLoading(false);
       }
     };
-    loadContent();
-  }, [selectedLangId, reset]);
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
+    loadContent();  }, [selectedLangId, reset]);
   const onSubmit: SubmitHandler<CustomersFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');

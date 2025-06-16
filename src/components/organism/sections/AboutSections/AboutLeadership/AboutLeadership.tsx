@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm, useFieldArray, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { HTMLEditor } from '../../../../molecules/HTMLEditor';
 import { TextInput } from '../../../../molecules/textinput';
 import { ImagePicker } from '../../../../molecules/imagePicker';
@@ -38,6 +38,10 @@ const AboutLeadership: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview } = useSplitLayout();
   
+  // Use shared language context
+  // Use section-specific language management
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('22');
+  
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<AboutLeadershipFormData>({
     defaultValues: {
       title: '',
@@ -52,25 +56,7 @@ const AboutLeadership: React.FC = () => {
   });
 
   const watchedManagers = watch("managers");
-
   const [ConfirmDialog, confirmDialog] = useConfirmDialog();
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -87,16 +73,9 @@ const AboutLeadership: React.FC = () => {
         console.error('Failed to load about leadership content:', error);
         reset(aboutDefaultData.AboutLeadership);
       }
-    };
+  };
     loadContent();
   }, [selectedLangId, reset]);
-
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
 
   const onSubmit: SubmitHandler<AboutLeadershipFormData> = async (data) => {
     if (selectedLangId === null) {

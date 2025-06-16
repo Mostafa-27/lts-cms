@@ -1,8 +1,8 @@
 import React from "react";
-import { AboutPage as AboutPageContent } from "../organism/pages/aboutPage";
+import AboutPageComponent from "../organism/pages/aboutPage/AboutPage";
 
 const AboutPage: React.FC = () => {
-  return <AboutPageContent />;
+  return <AboutPageComponent />;
 };
 
 export default AboutPage;

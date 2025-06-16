@@ -4,7 +4,6 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from "../../../../../services/languageService";
 import { TextInput } from '../../../../molecules/textinput';
 import IconPicker from '../../../../molecules/iconPicker/IconPicker';
 import { getIconByName } from '../../../../../utils/iconLibrary';
@@ -13,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../../ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
 import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 
 interface AnalyticsStat {
   id?: number;
@@ -37,6 +37,9 @@ const HomeAnalyticsSection: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const { refreshPreview } = useSplitLayout();
   
+  // Use section-specific language management
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('3');
+  
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<AnalyticsFormData>({
     defaultValues: {
       title: '',
@@ -52,25 +55,7 @@ const HomeAnalyticsSection: React.FC = () => {
 
   const watchedStats = watch("stats");
   
-  const [ConfirmDialog, confirmDialog] = useConfirmDialog();
-
-  const [languagesState, setLanguagesState] = useState<Language[]>([]); // Renamed to avoid conflict with form field
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages(); // Changed
-        if (fetchedLanguages.length > 0) {
-          setLanguagesState(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id); // Changed
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);  useEffect(() => {
+  const [ConfirmDialog, confirmDialog] = useConfirmDialog();useEffect(() => {
     const loadContent = async () => {
       if (selectedLangId === null) return;
       try {
@@ -125,35 +110,27 @@ const HomeAnalyticsSection: React.FC = () => {
       refreshPreview(); // Refresh the preview after successful save
     } catch (error) {
       console.error('Failed to update analytics content:', error);
-      toast.error('Failed to update Analytics section.');
-    }
+      toast.error('Failed to update Analytics section.');    }
   };
 
-  const handleTabChange = (langName: string) => { // Added
-    const lang = languagesState.find(l => l.name === langName);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };  return (
+  return (
     <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
       <div className="p-4 border rounded-md shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700">
         <ConfirmDialog />
        
-        
-        <CollapsibleContent className="space-y-4 mt-4">
-          {languagesState.length > 0 && selectedLangId !== null && (
-            <Tabs defaultValue={languagesState.find(l => l.id === selectedLangId)?.name} onValueChange={handleTabChange} className="w-full mb-6">
+          <CollapsibleContent className="space-y-4 mt-4">
+          {languages.length > 0 && selectedLangId !== null && (
+            <Tabs defaultValue={languages.find(l => l.id === selectedLangId)?.name} onValueChange={handleTabChange} className="w-full mb-6">
               <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 h-auto p-1">
-                {languagesState.map((lang) => (
+                {languages.map((lang) => (
                   <TabsTrigger 
                     key={lang.id} 
                     value={lang.name}
                     className="text-xs sm:text-sm px-2 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     {lang.name.toUpperCase()}
-                  </TabsTrigger>
-                ))}
-              </TabsList>          {languagesState.map((lang) => (            <TabsContent key={lang.id} value={lang.name}>
+                  </TabsTrigger>              ))}
+              </TabsList>          {languages.map((lang) => (<TabsContent key={lang.id} value={lang.name}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 
                 {/* Title and Subtitle */}
@@ -372,12 +349,12 @@ const HomeAnalyticsSection: React.FC = () => {
           ))}
         </Tabs>
       )}
-      {languagesState.length === 0 && (
+      {/* {languagesState.length === 0 && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin mr-2" />
           <p className="dark:text-gray-300">Loading languages...</p>
         </div>
-      )}
+      )} */}
         </CollapsibleContent>
       </div>
     </Collapsible>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +10,7 @@ import { Button } from '../../../ui/button';
 import { SplitLayout } from '../../layouts/SplitLayout';
 import { FullscreenModal } from '../../../molecules/FullscreenModal';
 import { useFullscreen } from '../../../../hooks/useFullscreen';
+import { useLanguage, LanguageProvider } from '../../../../contexts/LanguageContext';
 
 // Import About Sections
 import AboutHero from '../../sections/AboutSections/AboutHero/AboutHero';
@@ -81,6 +82,17 @@ const AboutPageContent: React.FC = () => {
     enterFullscreen, 
     exitFullscreen 
   } = useFullscreen();
+  
+  // Use shared language context
+  const { getActiveLanguageName } = useLanguage();
+
+  // Function to build preview URL with language parameter
+  const buildPreviewUrl = (sectionId: string) => {
+    const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
+    const languageName = getActiveLanguageName(sectionId);
+    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    return url;
+  };
 
   // If in fullscreen mode, render only the fullscreen section
   if (fullscreenSection) {
@@ -92,9 +104,8 @@ const AboutPageContent: React.FC = () => {
         isLoading={isLoading}
         section={section}
         onClose={exitFullscreen}
-      >
-        <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+      >        <SplitLayout 
+          previewUrl={buildPreviewUrl(section.id)}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -147,9 +158,8 @@ const AboutPageContent: React.FC = () => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="px-1 py-2">
-                    <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+                  <div className="px-1 py-2">                    <SplitLayout 
+                      previewUrl={buildPreviewUrl(section.id)}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}
@@ -163,8 +173,15 @@ const AboutPageContent: React.FC = () => {
           })}
         </Accordion>
       </div>
-    </div>
+    </div>  );
+};
+
+const AboutPage: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <AboutPageContent />
+    </LanguageProvider>
   );
 };
 
-export default AboutPageContent;
+export default AboutPage;

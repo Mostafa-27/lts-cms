@@ -19,6 +19,7 @@ import { HomeSustainabilitySection } from '../../sections/HomeSections/HomeSusta
 import HomeTestimonialsSection from '../../sections/HomeSections/HomeTestimonials/HomeTestimonials';
 import HomeTimelineSection from '../../sections/HomeSections/HomeTimeline/HomeTimeline';
 import { useFullscreen } from '../../../../hooks/useFullscreen';
+import { LanguageProvider, useLanguage } from '../../../../contexts/LanguageContext';
 
 import { BarChart3, Clock, Heart, Layout, Lightbulb, Settings, Target, Users, Maximize2, X } from 'lucide-react';
 
@@ -116,6 +117,17 @@ const HomePageContent: React.FC = () => {
     exitFullscreen 
   } = useFullscreen();
 
+  // Use shared language context
+  const { getActiveLanguageName } = useLanguage();
+
+  // Function to build preview URL with language parameter
+  const buildPreviewUrl = (sectionId: string) => {
+    const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
+    const languageName = getActiveLanguageName(sectionId);
+    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    return url;
+  };
+
   // If in fullscreen mode, render only the fullscreen section
   if (fullscreenSection) {
     const { section, SectionComponent } = fullscreenSection;
@@ -128,7 +140,7 @@ const HomePageContent: React.FC = () => {
         onClose={exitFullscreen}
       >
         <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+          previewUrl={buildPreviewUrl(section.id)}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -195,9 +207,8 @@ const HomePageContent: React.FC = () => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="px-1 py-2">
-                    <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+                  <div className="px-1 py-2">                    <SplitLayout 
+                      previewUrl={buildPreviewUrl(section.id)}
                       focusSection={section.anchor}
                       exitFullscreen={exitFullscreen}
                       fullscreenSection={!!fullscreenSection}
@@ -215,4 +226,12 @@ const HomePageContent: React.FC = () => {
   );
 };
 
-export default HomePageContent;
+const HomePage: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <HomePageContent />
+    </LanguageProvider>
+  );
+};
+
+export default HomePage;

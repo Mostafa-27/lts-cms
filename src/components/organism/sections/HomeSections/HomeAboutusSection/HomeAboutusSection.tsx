@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
 import { ImagePicker } from '../../../../molecules/imagePicker';
 import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../ui/tabs";
 import { useSplitLayout } from '../../../../../contexts/SplitLayoutContext';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 
 interface ImageData {
   imageUrl: string;
@@ -25,8 +25,12 @@ interface AboutUsFormData {
 const SECTION_ID = 2; // Example ID for About Us section
 
 const HomeAboutusSection: React.FC = () => {
+  console.log('Rendering HomeAboutusSection');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview, exitFullscreen } = useSplitLayout();
+
+  // Use section-specific language management
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('2');
 
   const { control, handleSubmit, reset, formState: { errors }   } = useForm<AboutUsFormData>({
     defaultValues: {
@@ -39,24 +43,6 @@ const HomeAboutusSection: React.FC = () => {
       description: '',
     },
   });
-
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id); // Use defaultLangId or fallback to the first language
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -116,17 +102,10 @@ const HomeAboutusSection: React.FC = () => {
       refreshPreview(); // Refresh the preview after successful save
       exitFullscreen(); // Exit fullscreen mode after successful save
     } catch (error) {
-      console.error('Failed to update about us content:', error);
-      toast.error('Failed to update About Us section.');
+      console.error('Failed to update about us content:', error);      toast.error('Failed to update About Us section.');
     }
   };
 
-  const handleTabChange = (langName: string) => {
-    const lang = languages.find(l => l.name === langName);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
   return (
     <div className="p-4 border rounded-md shadow-md mt-1 dark:bg-gray-800 dark:border-gray-700">
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>

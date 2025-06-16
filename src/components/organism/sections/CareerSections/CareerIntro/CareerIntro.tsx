@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { toast } from 'sonner';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { HTMLEditor } from '../../../../molecules/HTMLEditor';
 import { TextInput } from '../../../../molecules/textinput';
 import { Button } from '../../../../ui/button';
@@ -21,6 +21,7 @@ const SECTION_ID = 12; // Career Intro section ID
 const CareerIntro: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview } = useSplitLayout();
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('12');
   
   const {
     control,
@@ -31,26 +32,7 @@ const CareerIntro: React.FC = () => {
     defaultValues: {
       title: '',
       desc: ''
-    }
-  });
-
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
+    }  });
 
   useEffect(() => {
     const loadContent = async () => {
@@ -78,13 +60,7 @@ const CareerIntro: React.FC = () => {
       }
     };
 
-    loadContent();
-  }, [selectedLangId, reset]);
-
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) setSelectedLangId(lang.id);
-  };
+    loadContent();  }, [selectedLangId, reset]);
 
   const onSubmit: SubmitHandler<CareerIntroFormData> = async data => {
     if (selectedLangId === null) return;

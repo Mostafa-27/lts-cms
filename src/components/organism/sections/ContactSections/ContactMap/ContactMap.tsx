@@ -4,7 +4,7 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../../../../hooks/use-confirm-dialog';
 import { fetchContent, updateSectionContent } from '../../../../../services/contentService';
-import { fetchLanguages, type Language } from '../../../../../services/languageService';
+import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { TextInput } from '../../../../molecules/textinput';
 import MapSelector from '../../../../molecules/MapSelector';
 import MapPreview from '../../../../molecules/MapPreview/MapPreview';
@@ -33,6 +33,7 @@ const ContactMap: React.FC = () => {
   const [isMapSelectorOpen, setIsMapSelectorOpen] = useState(false);
   const [selectedBranchIndex, setSelectedBranchIndex] = useState<number | null>(null);
   const { refreshPreview } = useSplitLayout();
+  const { languages, selectedLangId, handleTabChange } = useSectionLanguage('18');
   
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm<ContactMapFormData>({
     defaultValues: {
@@ -46,27 +47,9 @@ const ContactMap: React.FC = () => {
     control,
     name: "branches",
   });
-
   const watchedBranches = watch("branches");
 
   const [ConfirmDialog, confirmDialog] = useConfirmDialog();
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLangId, setSelectedLangId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const { languages: fetchedLanguages, defaultLangId } = await fetchLanguages();
-        if (fetchedLanguages.length > 0) {
-          setLanguages(fetchedLanguages);
-          setSelectedLangId(defaultLangId ?? fetchedLanguages[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch languages:', error);
-      }
-    };
-    loadLanguages();
-  }, []);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -84,15 +67,8 @@ const ContactMap: React.FC = () => {
         reset(contactDefaultData.ContactMap);
       }
     };
-    loadContent();
-  }, [selectedLangId, reset]);
+    loadContent();  }, [selectedLangId, reset]);
 
-  const handleTabChange = (value: string) => {
-    const lang = languages.find(l => l.name === value);
-    if (lang) {
-      setSelectedLangId(lang.id);
-    }
-  };
   const onSubmit: SubmitHandler<ContactMapFormData> = async (data) => {
     if (selectedLangId === null) {
       toast.warning('Please select a language.');

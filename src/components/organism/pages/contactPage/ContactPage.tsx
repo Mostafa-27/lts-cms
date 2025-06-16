@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +10,7 @@ import { Button } from '../../../ui/button';
 import { SplitLayout } from '../../layouts/SplitLayout';
 import { FullscreenModal } from '../../../molecules/FullscreenModal';
 import { useFullscreen } from '../../../../hooks/useFullscreen';
+import { LanguageProvider, useLanguage } from '../../../../contexts/LanguageContext';
 
 // Import Contact Sections
 import ContactHero from '../../sections/ContactSections/ContactHero/ContactHero';
@@ -63,6 +64,24 @@ const ContactPageContent: React.FC = () => {
     enterFullscreen, 
     exitFullscreen 
   } = useFullscreen();
+
+  // Use shared language context
+  const { getActiveLanguageName, languages } = useLanguage();
+  const [languageUpdateKey, setLanguageUpdateKey] = useState(0);
+
+  // Track language changes to force preview URL updates
+  useEffect(() => {
+    setLanguageUpdateKey(prev => prev + 1);
+  }, [languages]);
+
+  // Function to build preview URL with language parameter
+  const buildPreviewUrl = useCallback((sectionId: string) => {
+    const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
+    const languageName = getActiveLanguageName(sectionId);
+    const url = languageName ? `${baseUrl}?lang=${languageName}` : baseUrl;
+    return url;
+  }, [getActiveLanguageName, languageUpdateKey]);
+
   // If in fullscreen mode, render only the fullscreen section
   if (fullscreenSection) {
     const { section, SectionComponent } = fullscreenSection;
@@ -73,9 +92,8 @@ const ContactPageContent: React.FC = () => {
         isLoading={isLoading}
         section={section}
         onClose={exitFullscreen}
-      >
-        <SplitLayout 
-          previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
+      >        <SplitLayout 
+          previewUrl={buildPreviewUrl(section.id)}
           focusSection={section.anchor}
           exitFullscreen={exitFullscreen}
           fullscreenSection={!!fullscreenSection}
@@ -128,13 +146,12 @@ const ContactPageContent: React.FC = () => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="px-1 py-2">
-                    <SplitLayout 
-                      previewUrl={`https://gh-website-nu.vercel.app/sections/${section.id}`}
-                      focusSection={section.anchor}
-                      exitFullscreen={exitFullscreen}
-                      fullscreenSection={!!fullscreenSection}
-                    >
+                  <div className="px-1 py-2">                      <SplitLayout 
+                        previewUrl={buildPreviewUrl(section.id)}
+                        focusSection={section.anchor}
+                        exitFullscreen={exitFullscreen}
+                        fullscreenSection={!!fullscreenSection}
+                      >
                       <SectionComponent />
                     </SplitLayout>
                   </div>
@@ -148,4 +165,12 @@ const ContactPageContent: React.FC = () => {
   );
 };
 
-export default ContactPageContent;
+const ContactPage: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <ContactPageContent />
+    </LanguageProvider>
+  );
+};
+
+export default ContactPage;
