@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImageEditor } from '@/components/molecules/imageEditor';
-import { Image, Upload, X } from 'lucide-react';
+import { Image,  X } from 'lucide-react';
 import { getImageUrl, getRelativeImagePath } from '@/utils/env';
 
 
@@ -26,23 +26,23 @@ const ImagePicker: React.FC<Props> = ({
   className = '' 
 })=> {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [directUploadMode, setDirectUploadMode] = useState(false);
-  const handleDirectFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (onImageChange && event.target.files && event.target.files[0]) {
-      // For simplicity, let's assume we handle the upload elsewhere
-      // and onImageChange expects a URL or a base64 string.
-      // Here, we'll just use the file name as a placeholder.
-      onImageChange({
-        imageUrl: event.target.files[0].name,
-        imageAlt: event.target.files[0].name // Default alt to filename
-      });
-    } else if (onImageChange) {
-      onImageChange({
-        imageUrl: '',
-        imageAlt: ''
-      });
-    }
-  };
+  // const [directUploadMode, setDirectUploadMode] = useState(false);
+  // const handleDirectFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (onImageChange && event.target.files && event.target.files[0]) {
+  //     // For simplicity, let's assume we handle the upload elsewhere
+  //     // and onImageChange expects a URL or a base64 string.
+  //     // Here, we'll just use the file name as a placeholder.
+  //     onImageChange({
+  //       imageUrl: event.target.files[0].name,
+  //       imageAlt: event.target.files[0].name // Default alt to filename
+  //     });
+  //   } else if (onImageChange) {
+  //     onImageChange({
+  //       imageUrl: '',
+  //       imageAlt: ''
+  //     });
+  //   }
+  // };
 
   const handleOpenGallery = () => {
     setIsDialogOpen(true);
