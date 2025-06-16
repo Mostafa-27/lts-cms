@@ -7,6 +7,8 @@ import { fetchContent, updateSectionContent } from '../../../../../services/cont
 import { useSectionLanguage } from '../../../../../contexts/LanguageContext';
 import { HTMLEditor } from '../../../../molecules/HTMLEditor';
 import { TextInput } from '../../../../molecules/textinput';
+import IconPicker from '../../../../molecules/iconPicker/IconPicker';
+import { getIconByName } from '../../../../../utils/iconLibrary';
 import { Button } from '../../../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../ui/tabs';
@@ -16,6 +18,7 @@ interface ServiceItem {
   id?: number;
   title: string;
   description: string;
+  icon: string;
 }
 
 interface ServicesFormData {
@@ -70,11 +73,11 @@ const HomeServicesSection: React.FC = () => {
         reset({
           title: '',
           subtitle: '',
-          items: []
-        });
+          items: []        });
       }
     };
-    loadContent();  }, [selectedLangId, reset]);
+    loadContent();
+  }, [selectedLangId, reset]);
 
   const onSubmit: SubmitHandler<ServicesFormData> = async (data) => {
     if (selectedLangId === null) {
@@ -157,12 +160,12 @@ const HomeServicesSection: React.FC = () => {
                     </div>                    {/* Service Items */}
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium dark:text-gray-200">Service Items ({fields.length})</h3>
-                        <Button
+                        <h3 className="text-lg font-medium dark:text-gray-200">Service Items ({fields.length})</h3>                        <Button
                           type="button"
                           onClick={() => append({ 
                             title: '', 
-                            description: ''
+                            description: '',
+                            icon: ''
                           })}
                           variant="outline"
                           size="sm"
@@ -174,13 +177,20 @@ const HomeServicesSection: React.FC = () => {
                       
                       {fields.length > 0 ? (
                         <div className="space-y-4">
-                          {fields.map((item, index) => (
-                            <Collapsible key={item.id} defaultOpen={index === 0}>
-                                <div className="border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                          {fields.map((item, index) => (                            <Collapsible key={item.id} defaultOpen={index === 0}>
+                              <div className="border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                                 <CollapsibleTrigger asChild>
                                   <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                                     <div className="flex items-center gap-2">
-                                      <Wrench className="h-4 w-4 text-purple-500" />
+                                      {(() => {
+                                        const iconName = watchedItems?.[index]?.icon;
+                                        const IconComponent = iconName ? getIconByName(iconName) : null;
+                                        return IconComponent ? (
+                                          <IconComponent className="h-4 w-4 text-purple-500" />
+                                        ) : (
+                                          <Wrench className="h-4 w-4 text-purple-500" />
+                                        );
+                                      })()}
                                       <span className="font-medium">
                                         {watchedItems?.[index]?.title || `Service #${index + 1}`}
                                       </span>
@@ -228,10 +238,8 @@ const HomeServicesSection: React.FC = () => {
                                         {errors.items?.[index]?.title && (
                                           <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.items?.[index]?.title?.message}</p>
                                         )}
-                                      </div>
-
-                                      {/* Service Description */}
-                                      <div>
+                                      </div>                                      {/* Service Description */}
+                                      <div className="mb-4">
                                         <label htmlFor={`service-description-${lang.name}-${index}`} className="block text-sm font-medium mb-1 dark:text-gray-300">
                                           Service Description
                                         </label>
@@ -251,6 +259,57 @@ const HomeServicesSection: React.FC = () => {
                                         {errors.items?.[index]?.description && (
                                           <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.items?.[index]?.description?.message}</p>
                                         )}
+                                      </div>
+
+                                      {/* Service Icon */}
+                                      <div>
+                                        <Controller
+                                          name={`items.${index}.icon` as const}
+                                          control={control}
+                                          rules={{ required: 'Icon is required' }}
+                                          render={({ field }) => (
+                                            <div className="space-y-2">
+                                              <label 
+                                                htmlFor={`service-icon-${lang.name}-${index}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                              >
+                                                Icon
+                                              </label>
+                                              <div className="flex items-center gap-2">
+                                              <IconPicker
+                                                value={field.value || "Star"}
+                                                onValueChange={field.onChange}
+                                                placeholder="Select an icon"
+                                                className="w-full"
+                                              />
+                                              {field.value && (
+                                                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                                                  <div className="flex items-center gap-2                             ">
+                                                    {(() => {
+                                                      const IconComponent = getIconByName(field.value);
+                                                      return IconComponent ? (
+                                                        <IconComponent className="w-5 h-5 text-blue-500" />
+                                                      ) : (
+                                                        <div className="w-5 h-5 bg-gray-300 rounded" />
+                                                      );
+                                                    })()}
+                                                    <span className="font-medium">Selected:</span>
+                                                    <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono">
+                                                      {field.value}
+                                                    </code>
+                                                  </div>
+                                                </div>
+                                              )}
+                                                  </div>
+
+                                              {errors.items?.[index]?.icon?.message && (
+                                                <p className="text-sm text-red-500 mt-1">
+                                                  {errors.items[index].icon.message}
+                                                </p>
+                                              )}
+                                            </div>
+                                          )}
+                                        />
                                       </div>
                                     </div>
                                   </div>
