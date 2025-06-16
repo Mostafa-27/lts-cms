@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ImageEditor } from '@/components/molecules/imageEditor';
 import { Image, Upload, X } from 'lucide-react';
+import { getImageUrl, getRelativeImagePath } from '@/utils/env';
 
 
 interface ImageData {
@@ -45,12 +46,13 @@ const ImagePicker: React.FC<Props> = ({
 
   const handleOpenGallery = () => {
     setIsDialogOpen(true);
-  }; 
-  const handleImageSelected = (imageUrl: string, imageAlt?: string) => {
+  };   const handleImageSelected = (imageUrl: string, imageAlt?: string) => {
     console.log('Selected Image:', imageUrl, imageAlt);
     if (onImageChange) {
+      // Store only the relative path, not the full URL
+      const relativePath = getRelativeImagePath(imageUrl);
       onImageChange({
-        imageUrl,
+        imageUrl: relativePath,
         imageAlt: imageAlt || ''
       });
     }
@@ -68,13 +70,12 @@ const ImagePicker: React.FC<Props> = ({
     <div className={`${className}`}>
       {label && <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>}        {(value && ((typeof value === 'string' && value) || (typeof value === 'object' && value.imageUrl))) ? (
         // Show the currently selected image
-        <div className="mt-1">
-          <div className="relative border rounded-md overflow-hidden w-32 h-24 bg-gray-100 dark:bg-gray-700 mb-3">      
+        <div className="mt-1">          <div className="relative border rounded-md overflow-hidden w-32 h-24 bg-gray-100 dark:bg-gray-700 mb-3">      
             <img 
-              src={typeof value === 'object' ? value?.imageUrl : (value || '')} 
+              src={getImageUrl(typeof value === 'object' ? value?.imageUrl || '' : (value || ''))} 
               className="w-full h-full object-cover"
             />          
-          </div>      
+          </div>
           <div className="space-y-2">            
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate" title={typeof value === 'string' ? value : (value?.imageUrl || '')}>
               {typeof value === 'string' ? value.split('-')[1] : (value?.imageUrl.split('-')[1] || '')}

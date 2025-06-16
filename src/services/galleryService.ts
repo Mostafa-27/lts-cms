@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { BrowserStorage } from '@/utils/browserStorage';
 import { TOKEN_COOKIE_KEY } from '@/utils/constants';
+import { ENV } from '@/utils/env';
 
-const API_URL = 'https://amarinaproperties.com/lts-backend/api';
+const API_URL = ENV.API_BASE_URL;
 
 // Types for gallery responses
 export interface GalleryImage {

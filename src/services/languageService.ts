@@ -1,3 +1,5 @@
+import { ENV } from "@/utils/env";
+
 export interface Language {
   id: number;
   name: string;
@@ -9,7 +11,7 @@ export interface Language {
 
 export const fetchLanguages = async (): Promise<{ languages: Language[]; defaultLangId: number | null }> => {
   try {
-    const response = await fetch('https://amarinaproperties.com/lts-backend/api/languages');
+    const response = await fetch(`${ENV.API_BASE_URL}/languages`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
