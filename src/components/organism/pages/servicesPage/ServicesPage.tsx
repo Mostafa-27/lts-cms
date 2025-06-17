@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -16,7 +16,7 @@ import { LanguageProvider, useLanguage } from '../../../../contexts/LanguageCont
 import ServicesHero from '../../sections/ServicesSections/ServicesHero/ServicesHero';
 import ServicesList from '../../sections/ServicesSections/ServicesList/ServicesList';
 
-import { Settings, List, Target, Maximize2 } from 'lucide-react';
+import {   List, Target, Maximize2 } from 'lucide-react';
 
 // Define sections for better organization
 const sections = [
@@ -45,13 +45,13 @@ const ServicesPageContent: React.FC = () => {
     isLoading, 
     enterFullscreen, 
     exitFullscreen 
-  } = useFullscreen();  const { getActiveLanguageCode, languages } = useLanguage();
-  const [languageUpdateKey, setLanguageUpdateKey] = useState(0);
+  } = useFullscreen();  const { getActiveLanguageCode } = useLanguage();
+  // const [languageUpdateKey, setLanguageUpdateKey] = useState(0);
 
   // Track language changes to force preview URL updates
-  useEffect(() => {
-    setLanguageUpdateKey(prev => prev + 1);
-  }, [languages]);
+  // useEffect(() => {
+  //   setLanguageUpdateKey(prev => prev + 1);
+  // }, [languages]);
   const buildPreviewUrl = (sectionId: string) => {
     const baseUrl = `https://gh-website-nu.vercel.app/sections/${sectionId}`;
     const languageCode = getActiveLanguageCode(sectionId);

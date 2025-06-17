@@ -45,6 +45,18 @@ export const authService = {
   }
 };
 
+// Email settings services
+export const emailSettingsService = {
+  getDefaultEmail: async () => {
+    const response = await api.get('/email/settings');
+    return response.data;
+  },
+  updateDefaultEmail: async (email: string) => {
+    const response = await api.put('/email/settings', { email });
+    return response.data;
+  }
+};
+
 // Section services
 export const sectionService = {
   getSectionContent: async (sectionId: number, langId: number) => {
