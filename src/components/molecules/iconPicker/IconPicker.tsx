@@ -41,7 +41,7 @@ const IconPicker = ({
   const [activeCategory, setActiveCategory] = useState<string>("general");
   const allIconNames = useMemo(() => {
     const icons = getAllIconNames();
-    console.log("getAllIconNames returned:", icons.length, "icons");
+    // console.log("getAllIconNames returned:", icons.length, "icons");
     return icons;
   }, []); 
    const filteredIcons = useMemo(() => {
@@ -50,10 +50,10 @@ const IconPicker = ({
     // Start with all icons or filter by category
     if (activeCategory === "all") {
       icons = [...allIconNames]; // Use all available icons
-      console.log("All icons count:", icons.length, "First 10:", icons.slice(0, 10));
+      // console.log("All icons count:", icons.length, "First 10:", icons.slice(0, 10));
     } else if (activeCategory in iconCategories) {
       icons = getIconsByCategory(activeCategory as keyof typeof iconCategories);
-      console.log(`Category ${activeCategory} icons count:`, icons.length);
+      // console.log(`Category ${activeCategory} icons count:`, icons.length);
     } else {
       icons = [...allIconNames]; // Fallback to all icons
     }
@@ -65,7 +65,7 @@ const IconPicker = ({
       );
     }
     
-    console.log("Final filtered icons count:", icons.length);
+    // console.log("Final filtered icons count:", icons.length);
     return icons;
   }, [allIconNames, searchTerm, activeCategory]);
 
@@ -93,7 +93,7 @@ const IconPicker = ({
   const categoryEntries = Object.entries(iconCategories);
 
   // Debug logging
-  console.log("Rendering IconPicker, activeCategory:", activeCategory, "filteredIcons count:", filteredIcons.length);
+  // console.log("Rendering IconPicker, activeCategory:", activeCategory, "filteredIcons count:", filteredIcons.length);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

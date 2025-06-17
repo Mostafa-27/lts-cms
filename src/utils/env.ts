@@ -32,7 +32,7 @@ export const getRelativeImagePath = (fullUrl: string): string => {
   if (fullUrl.startsWith(ENV.MEDIA_BASE_URL)) {
       return fullUrl.replace(`${ENV.MEDIA_BASE_URL}`, '');
     }
-    console.log('Full URL:', fullUrl.replace(`${ENV.MEDIA_BASE_URL}`, ''));
+    // console.log('Full URL:', fullUrl.replace(`${ENV.MEDIA_BASE_URL}`, ''));
   
   return fullUrl;
 };

@@ -47,7 +47,7 @@ const ImagePicker: React.FC<Props> = ({
   const handleOpenGallery = () => {
     setIsDialogOpen(true);
   };   const handleImageSelected = (imageUrl: string, imageAlt?: string) => {
-    console.log('Selected Image:', imageUrl, imageAlt);
+    // console.log('Selected Image:', imageUrl, imageAlt);
     if (onImageChange) {
       // Store only the relative path, not the full URL
       const relativePath = getRelativeImagePath(imageUrl);

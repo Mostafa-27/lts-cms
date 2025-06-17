@@ -105,7 +105,7 @@ export const updateSectionContent = async (sectionId: number, langId: number, co
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    console.log(JSON.stringify({ content }))
+    // console.log(JSON.stringify({ content }))
     const response = await fetch(`${API_BASE_URL}/aggregated/section/${sectionId}/language/${langId}`, {
       method: 'PUT',
       headers,

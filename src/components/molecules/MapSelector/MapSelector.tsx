@@ -45,7 +45,7 @@ const LocationMarker: React.FC<LocationMarkerProps> = ({ position, setPosition, 
           });
         })
         .catch((error) => {
-          console.log('Geocoding error:', error);
+          console.error('Geocoding error:', error);
           setSelectedLocation({ lat, lng });
         });
     },

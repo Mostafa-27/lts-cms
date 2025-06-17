@@ -25,7 +25,7 @@ interface AboutUsFormData {
 const SECTION_ID = 2; // Example ID for About Us section
 
 const HomeAboutusSection: React.FC = () => {
-  console.log('Rendering HomeAboutusSection');
+  // console.log('Rendering HomeAboutusSection');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { refreshPreview, exitFullscreen } = useSplitLayout();
 
@@ -95,9 +95,9 @@ const HomeAboutusSection: React.FC = () => {
       return;
     }    try {
 
-      console.log('Submitting About Us section data:', data);
+      // console.log('Submitting About Us section data:', data);
       await updateSectionContent(SECTION_ID, selectedLangId, data);
-      console.log(`About Us section data updated for lang ${selectedLangId}:`, data);
+      // console.log(`About Us section data updated for lang ${selectedLangId}:`, data);
       toast.success(`About Us section updated successfully!`);
       refreshPreview(); // Refresh the preview after successful save
       exitFullscreen(); // Exit fullscreen mode after successful save

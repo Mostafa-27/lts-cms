@@ -80,8 +80,8 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       
-      console.log('Control dimensions:', { height: controlsHeight, width: controlsWidth });
-      console.log('Image rect:', rect);
+      // console.log('Control dimensions:', { height: controlsHeight, width: controlsWidth });
+      // console.log('Image rect:', rect);
       
       // Position above the image by default with a safe margin
       let top = Math.max(10, rect.top - controlsHeight - 15);
@@ -112,7 +112,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         left: Math.round(left)
       };
       
-      console.log('Calculated controls position:', position);
+      // console.log('Calculated controls position:', position);
     } catch (error) {
       console.error('Error calculating control position:', error);
     }
@@ -254,7 +254,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       e.stopPropagation();
       
       const imgElement = target as HTMLImageElement;
-      console.log('Image clicked:', imgElement);
+      // console.log('Image clicked:', imgElement);
       
       setSelectedImage(imgElement);
       setShowControls(true);
@@ -297,7 +297,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     if (document.body.classList.contains('resizing-active') || 
         document.querySelector('.resize-controls.active')) {
-      console.log('Skipping outside click during active resize operation');
+      // console.log('Skipping outside click during active resize operation');
       return;
     }
     
@@ -308,7 +308,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       if (target.tagName === 'BUTTON' && 
           (target.closest('.resize-controls') || 
            target.textContent?.match(/W[\+\-]|H[\+\-]|Reset|Save/))) {
-        console.log('Clicked a resize control button, keeping panel open');
+        // console.log('Clicked a resize control button, keeping panel open');
         return;
       }
       
@@ -372,7 +372,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       // Skip handling if we're in resize mode or controls are active
       if (document.body.classList.contains('resizing-active') ||
           document.querySelector('.resize-controls.active')) {
-        console.log('Skipping outside click during active resize');
+        // console.log('Skipping outside click during active resize');
         return;
       }
       
@@ -419,7 +419,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             if (Math.abs(currentWidth - parseInt(savedWidth)) > 2 || 
                 Math.abs(currentHeight - parseInt(savedHeight)) > 2) {
               
-              console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
+              // console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
               // Use our dedicated helper to apply dimensions consistently
               persistImageSize(img, parseInt(savedWidth), parseInt(savedHeight));
               
@@ -466,7 +466,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
 
   // Handler for resizing an image - only updates preview dimensions without modifying the actual image
   const handleResize = useCallback((direction: 'width' | 'height', delta: number) => {
-    console.log(`HandleResize called: ${direction}, delta: ${delta}`);
+    // console.log(`HandleResize called: ${direction}, delta: ${delta}`);
     
     if (!selectedImage || !selectedImage.src) {
       console.warn('No valid image selected');
@@ -480,7 +480,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     const currentWidth = previewDimensions.width || dimensions.width || 0;
     const currentHeight = previewDimensions.height || dimensions.height || 0;
     
-    console.log('Current dimensions:', { width: currentWidth, height: currentHeight });
+    // console.log('Current dimensions:', { width: currentWidth, height: currentHeight });
     
     // Calculate new dimensions
     let newWidth: number;
@@ -501,7 +501,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     const roundedWidth = Math.round(newWidth);
     const roundedHeight = Math.round(newHeight);
     
-    console.log('New dimensions:', { width: roundedWidth, height: roundedHeight });
+    // console.log('New dimensions:', { width: roundedWidth, height: roundedHeight });
     
     // Update preview dimensions in state - don't modify the actual image yet
     setPreviewDimensions({
@@ -517,7 +517,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
     
     // Mark that we have changes
     setHasChanges(true);
-    console.log('Setting preview dimensions to:', { width: roundedWidth, height: roundedHeight });
+    // console.log('Setting preview dimensions to:', { width: roundedWidth, height: roundedHeight });
     
     // Update controls position with a slight delay
     setTimeout(() => {
@@ -531,7 +531,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
   const resetSize = useCallback(() => {
     if (!selectedImage) return;
     
-    console.log('Reset size called');
+    // console.log('Reset size called');
     
     try {
       if (!isImageValid(selectedImage)) {
@@ -632,15 +632,15 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
 
   // Handler for saving image changes - applies the preview dimensions to the actual image
   const saveChanges = useCallback(() => {
-    console.log('Save changes called, hasChanges:', hasChanges);
+    // console.log('Save changes called, hasChanges:', hasChanges);
     
     if (!quillRef.current || !hasChanges) {
-      console.log('No changes to save or no quill ref');
+      // console.log('No changes to save or no quill ref');
       return;
     }
     
     if (!selectedImage || !isImageValid(selectedImage)) {
-      console.log('Selected image is no longer valid, attempting to recover');
+      // console.log('Selected image is no longer valid, attempting to recover');
       // We'll try to find the image in the editor below
     }
     
@@ -657,7 +657,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         return;
       }
       
-      console.log('Saving dimensions:', currentWidth, currentHeight);
+      // console.log('Saving dimensions:', currentWidth, currentHeight);
       
       // Get image source for identification
       let imgSrc = '';
@@ -670,7 +670,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
         if (images.length > 0) {
           currentSelectedImage = images[0] as HTMLImageElement;
           setSelectedImage(currentSelectedImage); // Update our reference
-          console.log('Recovered image reference');
+          // console.log('Recovered image reference');
         } else {
           console.warn('Could not find image to save');
           return;
@@ -693,7 +693,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       const updateImageSize = (img: HTMLImageElement) => {
         if (!isImageValid(img)) return;
         
-        console.log('Persisting image dimensions:', currentWidth, currentHeight);
+        // console.log('Persisting image dimensions:', currentWidth, currentHeight);
         
         // Use our dedicated helper to ensure consistent application of size
         persistImageSize(img, currentWidth, currentHeight);
@@ -718,7 +718,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       setTimeout(() => {
         if (quillRef.current) {
           try {
-            console.log('Starting save process with dimensions:', currentWidth, currentHeight);
+            // console.log('Starting save process with dimensions:', currentWidth, currentHeight);
             
             // Use Quill's delta API
             const quill = quillRef.current.getEditor();
@@ -741,7 +741,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
               });
               
               // Apply the delta
-              console.log('Applying delta to update image at index', imageIndex);
+              // console.log('Applying delta to update image at index', imageIndex);
               quill.updateContents(delta, 'api');
               
               // Force the browser to redraw
@@ -752,10 +752,10 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
                 quill.setSelection(range);
               }
               
-              console.log('✅ Updated image via Quill delta');
+              // console.log('✅ Updated image via Quill delta');
             } else {
               // Fallback to innerHTML approach if Delta fails
-              console.log('Fallback to innerHTML approach');
+              // console.log('Fallback to innerHTML approach');
               const html = quillRef.current.getEditor().root.innerHTML;
               quillRef.current.getEditor().root.innerHTML = html;
             }
@@ -807,7 +807,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
           
           if (quillRef.current.props?.onChange) {
             quillRef.current.props.onChange(finalHTML);
-            console.log('⚡ Triggered onChange via React props with final HTML');
+            // console.log('⚡ Triggered onChange via React props with final HTML');
           }
         } catch (error) {
           console.error('Error in final onChange trigger:', error);
@@ -825,7 +825,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
       setHasChanges(false);
       setShowPreview(false);
       
-      console.log('✅ Image size saved with HTML attributes:',` width="${currentWidth}" height="${currentHeight}"`);
+      // console.log('✅ Image size saved with HTML attributes:',` width="${currentWidth}" height="${currentHeight}"`);
       
       // Show visual feedback
       if (currentSelectedImage && isImageValid(currentSelectedImage)) {
@@ -890,7 +890,7 @@ const SimpleImageResize: React.FC<SimpleImageResizeProps> = ({ quillRef }) => {
             'max-height': 'none'
           });
           
-          console.log('Applied fallback save with dimensions:', width, height);
+          // console.log('Applied fallback save with dimensions:', width, height);
           setHasChanges(false);
           clearPreviewOverlay();
         }

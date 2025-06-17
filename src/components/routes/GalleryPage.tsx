@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 const GalleryPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
-  console.log("GalleryPage rendered with selectedImage:", selectedImage);
+  // console.log("GalleryPage rendered with selectedImage:", selectedImage);
     const handleImageSelected = (image: GalleryImage) => {
     setSelectedImage(image);
     // You could copy the image URL to clipboard or show notification

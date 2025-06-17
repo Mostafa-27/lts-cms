@@ -35,7 +35,8 @@ const HomeCTASection: React.FC = () => {
       try {
         const data = await fetchContent(SECTION_ID, selectedLangId);
         const content = data?.content;
-        console.log('Fetched CTA content:', content);        if (content) {
+        // console.log('Fetched CTA content:', content);     
+           if (content) {
           // Check if content is already an object or needs to be parsed
           let parsedContent: any;
           if (typeof content === 'string') {

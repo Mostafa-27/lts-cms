@@ -20,8 +20,8 @@ export const getAllIconNames = (): string[] => {
   // Remove duplicates using Set
   const uniqueIcons = [...new Set(allCategoryIcons)];
   
-  console.log("Total icons from categories:", uniqueIcons.length);
-  console.log("First 10 icons:", uniqueIcons.slice(0, 10));
+  // console.log("Total icons from categories:", uniqueIcons.length);
+  // console.log("First 10 icons:", uniqueIcons.slice(0, 10));
   
   return uniqueIcons;
 };

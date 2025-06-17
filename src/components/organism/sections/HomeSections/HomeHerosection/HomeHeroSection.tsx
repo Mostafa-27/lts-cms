@@ -46,7 +46,8 @@ const HomeHeroSection: React.FC = () => {
       try {
         const data = await fetchContent(SECTION_ID, selectedLangId);
         const content = data?.content;
-console.log('Fetched content:', content);        if (content) {
+// console.log('Fetched content:', content);    
+   if (content) {
           reset({
             title: content.title || '',
             description: content.description || '',

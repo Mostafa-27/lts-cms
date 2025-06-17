@@ -81,7 +81,7 @@ const HomeCustomersSection: React.FC = () => {
       setIsLoading(true);
       try {        const data = await fetchContent(SECTION_ID, selectedLangId);
         const content = data?.content;
-        console.log('Fetched content:', content);
+        // console.log('Fetched content:', content);
         if (content && content) {
           // Check if content is already an object or needs to be parsed
           let formData: CustomersFormData;
@@ -89,7 +89,9 @@ const HomeCustomersSection: React.FC = () => {
             formData = JSON.parse(content) as CustomersFormData;
           } else {
             formData = content as CustomersFormData;
-          }          console.log('Parsed form data:', formData);
+          }         
+          
+          // console.log('Parsed form data:', formData);
           
           // Ensure arrays exist and have default values
           const logos = formData.logos || [];

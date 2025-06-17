@@ -114,7 +114,7 @@ const HomeTimelineSection: React.FC = () => {
     }
     try {
       await updateSectionContent(SECTION_ID, selectedLangId,  data );
-      console.log(`Timeline section data updated for lang ${selectedLangId}:`, data);
+      // console.log(`Timeline section data updated for lang ${selectedLangId}:`, data);
       toast.success('Timeline section updated successfully!');
       refreshPreview(); // Refresh the preview after successful save
     } catch (error) {

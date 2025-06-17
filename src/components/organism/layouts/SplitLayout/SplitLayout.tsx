@@ -47,7 +47,7 @@ const SplitLayout: React.FC<SplitLayoutProps> = ({
   };
   
   const exitFullscreen2 = () => {
-    console.log("Exiting fullscreen");
+    // console.log("Exiting fullscreen");
     setIsFullscreen(false);
     setIsCollapsed(false);
     setIsIframeCollapsed(false);
