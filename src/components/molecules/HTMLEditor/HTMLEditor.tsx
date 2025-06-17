@@ -117,7 +117,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
         const savedHeight = img.getAttribute('data-height') || img.getAttribute('height');
         
         if (savedWidth && savedHeight) {
-          console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
+          // console.log(`Restoring image dimensions: ${savedWidth}x${savedHeight}`);
           img.style.width = `${savedWidth}px`;
           img.style.height = `${savedHeight}px`;
           img.style.maxWidth = 'none';
@@ -131,7 +131,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
   }, [editorContent]);  // Optimized content change handler with proper cleanup
   const handleChange = useCallback((content: string) => {
     // Enhanced image URL fixing with better regex and preserve dimensions
-    console.log('Handling content change:', content);
+    // console.log('Handling content change:', content);
     const fixedContent = content.replace(
       /<img([^>]*)src="([^"]+)"([^>]*)>/g, 
       (match, before, src, after) => {
@@ -158,7 +158,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
           
           // Only log if we have dimensions to preserve
           if (width && height) {
-            console.log('Preserving image dimensions:', { width, height });
+            // console.log('Preserving image dimensions:', { width, height });
           }
           
           // Don't need to modify the tag if it already has the attributes we need
@@ -207,7 +207,7 @@ const HTMLEditor: React.FC<Props> = ({ value = '', onChange, id }) => {
         quill.setSelection(position + 1, 0);
         quill.focus();
         
-        console.log('Image inserted with custom blot:', imageUrl);
+        // console.log('Image inserted with custom blot:', imageUrl);
       }
     } catch (error) {
       console.error('Error inserting image:', error);
