@@ -38,7 +38,7 @@ const IconPicker = ({
 }: IconPickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("general");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const allIconNames = useMemo(() => {
     const icons = getAllIconNames();
     // console.log("getAllIconNames returned:", icons.length, "icons");
@@ -48,10 +48,7 @@ const IconPicker = ({
     let icons: string[] = [];
     
     // Start with all icons or filter by category
-    if (activeCategory === "all") {
-      icons = [...allIconNames]; // Use all available icons
-      // console.log("All icons count:", icons.length, "First 10:", icons.slice(0, 10));
-    } else if (activeCategory in iconCategories) {
+     if (activeCategory in iconCategories) {
       icons = getIconsByCategory(activeCategory as keyof typeof iconCategories);
       // console.log(`Category ${activeCategory} icons count:`, icons.length);
     } else {
@@ -91,6 +88,13 @@ const IconPicker = ({
   };
 
   const categoryEntries = Object.entries(iconCategories);
+
+  // Calculate grid rows for categories
+  const categoryCount = categoryEntries.length  ; // +1 for 'All'
+  const isTwoRows = categoryCount > 12; // threshold for 2 rows, adjust as needed
+  const categoryGridClass = isTwoRows
+    ? 'grid grid-cols-3 md:grid-cols-12 grid-rows-2'
+    : 'grid grid-cols-6';
 
   // Debug logging
   // console.log("Rendering IconPicker, activeCategory:", activeCategory, "filteredIcons count:", filteredIcons.length);
@@ -151,8 +155,8 @@ const IconPicker = ({
           </div>            {showCategories && (
             <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col min-h-0">
               <ScrollArea className="w-full">
-                <TabsList className="flex w-max h-auto p-1 gap-1 mb-2">
-                  <TabsTrigger value="all" className="text-xs py-2 px-3 whitespace-nowrap">All</TabsTrigger>
+                <TabsList className={cn(categoryGridClass, 'w-full h-auto p-1 gap-1 mb-2')}>
+                  {/* <TabsTrigger value="all" className="text-xs py-2 px-3 whitespace-nowrap">All</TabsTrigger> */}
                   {categoryEntries.map(([key]) => (
                     <TabsTrigger key={key} value={key} className="text-xs py-2 px-2 capitalize whitespace-nowrap">
                       {key === 'communication' ? 'Comm' : 
