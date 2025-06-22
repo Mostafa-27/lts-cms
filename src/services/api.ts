@@ -47,12 +47,24 @@ export const authService = {
 
 // Email settings services
 export const emailSettingsService = {
-  getDefaultEmail: async () => {
-    const response = await api.get('/email/settings');
+  // Get default CV email
+  getDefaultCvEmail: async () => {
+    const response = await api.get('/constants/default_cv_email');
     return response.data;
   },
-  updateDefaultEmail: async (email: string) => {
-    const response = await api.put('/email/settings', { email });
+  // Update default CV email
+  updateDefaultCvEmail: async (email: string) => {
+    const response = await api.put('/constants/default_cv_email', { value: email });
+    return response.data;
+  },
+  // Get default user data (opinion) email
+  getDefaultUserDataEmail: async () => {
+    const response = await api.get('/constants/default_user_data_email');
+    return response.data;
+  },
+  // Update default user data (opinion) email
+  updateDefaultUserDataEmail: async (email: string) => {
+    const response = await api.put('/constants/default_user_data_email', { value: email });
     return response.data;
   }
 };

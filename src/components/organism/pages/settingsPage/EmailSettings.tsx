@@ -9,12 +9,13 @@ import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 
 interface EmailSettingsFormData {
-  defaultEmail: string;
+  defaultCvEmail: string;
+  defaultUserDataEmail: string;
 }
 
 const EmailSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
+
   const {
     register,
     handleSubmit,
@@ -26,9 +27,15 @@ const EmailSettings: React.FC = () => {
     const loadSettings = async () => {
       setIsLoading(true);
       try {
-        const response = await emailSettingsService.getDefaultEmail();
-        if (response.success && response.data) {
-          setValue('defaultEmail', response.data.defaultEmail);
+        const [cvRes, userDataRes] = await Promise.all([
+          emailSettingsService.getDefaultCvEmail(),
+          emailSettingsService.getDefaultUserDataEmail()
+        ]);
+        if (cvRes && cvRes.data) {
+          setValue('defaultCvEmail', cvRes.data.value || cvRes.data.defaultCvEmail || '');
+        }
+        if (userDataRes && userDataRes.data) {
+          setValue('defaultUserDataEmail', userDataRes.data.value || userDataRes.data.defaultUserDataEmail || '');
         }
       } catch (error) {
         console.error('Failed to load email settings:', error);
@@ -37,18 +44,20 @@ const EmailSettings: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     loadSettings();
   }, [setValue]);
 
   const onSubmit: SubmitHandler<EmailSettingsFormData> = async (data) => {
     setIsLoading(true);
     try {
-      const response = await emailSettingsService.updateDefaultEmail(data.defaultEmail);
-      if (response.success) {
+      const [cvRes, userDataRes] = await Promise.all([
+        emailSettingsService.updateDefaultCvEmail(data.defaultCvEmail),
+        emailSettingsService.updateDefaultUserDataEmail(data.defaultUserDataEmail)
+      ]);
+      if ((cvRes && cvRes.success) && (userDataRes && userDataRes.success)) {
         toast.success('Email settings updated successfully');
       } else {
-        toast.error('Failed to update email settings');
+        toast.error('Failed to update one or more email settings');
       }
     } catch (error) {
       console.error('Failed to update email settings:', error);
@@ -60,28 +69,21 @@ const EmailSettings: React.FC = () => {
 
   return (
     <Card className="p-6 bg-white dark:bg-gray-800 shadow-sm">
-      {/* <div className="mb-6">
-        <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-100">Default Email Configuration</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Set the default email address that will receive notifications from the application.
-        </p>
-      </div> */}
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="defaultEmail" className="text-sm font-medium">
-            Default Email Address
+          <Label htmlFor="defaultCvEmail" className="text-sm font-medium">
+            Default CV Email Address
           </Label>
           <div className="flex gap-2">
             <div className="relative flex-grow">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
-                id="defaultEmail"
+                id="defaultCvEmail"
                 type="email"
-                placeholder="email@example.com"
+                placeholder="cv@email.com"
                 className="pl-9"
-                {...register("defaultEmail", { 
-                  required: "Email is required",
+                {...register("defaultCvEmail", {
+                  required: "CV Email is required",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                     message: "Invalid email address"
@@ -91,11 +93,37 @@ const EmailSettings: React.FC = () => {
               />
             </div>
           </div>
-          {errors.defaultEmail && (
-            <p className="text-sm text-red-500">{errors.defaultEmail.message}</p>
+          {errors.defaultCvEmail && (
+            <p className="text-sm text-red-500">{errors.defaultCvEmail.message}</p>
           )}
         </div>
-
+        <div className="space-y-2">
+          <Label htmlFor="defaultUserDataEmail" className="text-sm font-medium">
+            Default User Data Email Address
+          </Label>
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input
+                id="defaultUserDataEmail"
+                type="email"
+                placeholder="user@data.com"
+                className="pl-9"
+                {...register("defaultUserDataEmail", {
+                  required: "User Data Email is required",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address"
+                  }
+                })}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          {errors.defaultUserDataEmail && (
+            <p className="text-sm text-red-500">{errors.defaultUserDataEmail.message}</p>
+          )}
+        </div>
         <div className="pt-2">
           <Button 
             type="submit" 
