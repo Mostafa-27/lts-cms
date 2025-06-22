@@ -9,6 +9,8 @@ export interface Language {
   name: string;
   code: string;
   icon: string;
+  active?: boolean;
+  added?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -22,6 +24,11 @@ export interface CreateLanguageData {
 export interface UpdateLanguageData {
   name: string;
   icon: string;
+}
+
+export interface LanguageStatusUpdate {
+  active?: boolean;
+  added?: boolean;
 }
 
 const getAuthHeaders = (): HeadersInit => {
@@ -56,6 +63,102 @@ export const languageManagementService = {
       throw new Error('Invalid response format');
     } catch (error) {
       console.error('Error fetching languages:', error);
+      throw error;
+    }
+  },
+
+  // Get not-added languages
+  getNotAddedLanguages: async (): Promise<Language[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/languages/all/not-added`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        return result.data;
+      }
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('Error fetching not-added languages:', error);
+      throw error;
+    }
+  },
+
+  // Get added languages
+  getAddedLanguages: async (): Promise<Language[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/languages/all/added`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        return result.data;
+      }
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('Error fetching added languages:', error);
+      throw error;
+    }
+  },
+
+  // Update language added status
+  updateLanguageAddedStatus: async (code: string, added: boolean): Promise<Language> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/languages/code/${code}/added`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ added }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorData}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error('Update operation did not return success or data.');
+    } catch (error) {
+      console.error('Error updating language added status:', error);
+      throw error;
+    }
+  },
+
+  // Update language active status
+  updateLanguageActiveStatus: async (code: string, active: boolean): Promise<Language> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/languages/code/${code}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ active }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorData}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error('Update operation did not return success or data.');
+    } catch (error) {
+      console.error('Error updating language active status:', error);
       throw error;
     }
   },

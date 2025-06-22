@@ -1,7 +1,7 @@
 // Environment configuration utilities
 export const ENV = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://amarinaproperties.com/lts-backend/api',
-  MEDIA_BASE_URL: import.meta.env.VITE_MEDIA_BASE_URL || 'https://amarinaproperties.com/lts-backend/',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://linktalentsupport.com/lts-backend/api',
+  MEDIA_BASE_URL: import.meta.env.VITE_MEDIA_BASE_URL || 'https://linktalentsupport.com/lts-backend/',
 } as const;
 
 // Helper function to get full image URL
