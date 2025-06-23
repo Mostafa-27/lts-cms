@@ -36,9 +36,12 @@ const AppSidebar = () => {
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader>
-        <div className="flex items-center justify-between p-2">
-          {!isCollapsed && <span className="text-lg font-semibold">CMS</span>}
+      <SidebarHeader>        <div className="flex items-center justify-between p-2">
+          {!isCollapsed && (
+            <Link to="/pages/home" className="text-lg font-semibold hover:text-primary transition-colors">
+              CMS
+            </Link>
+          )}
           <Button
             variant="ghost"
             size="sm"
